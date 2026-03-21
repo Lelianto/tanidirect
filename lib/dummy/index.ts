@@ -1,0 +1,776 @@
+import type {
+  User, Poktan, AnggotaPoktan, Supplier, PreOrder, Transaksi,
+  KontribusiPetani, QAInspeksi, Logistik, Kredit, CicilanKredit,
+  AnomaliLog, HargaHistoris, Notifikasi, PrediksiHarga, Pencairan,
+} from '@/types'
+
+// ============ USERS ============
+export const dummyUsers: User[] = [
+  {
+    id: 'u-ketua-01',
+    role: 'ketua_poktan',
+    nama_lengkap: 'Pak Surya Wijaya',
+    no_hp: '081234567890',
+    no_ktp: '3201011234567890',
+    provinsi: 'Jawa Barat',
+    kabupaten: 'Bandung',
+    kecamatan: 'Lembang',
+    alamat: 'Jl. Raya Lembang No. 45',
+    is_verified: true,
+    is_active: true,
+    created_at: '2025-01-15T08:00:00Z',
+    updated_at: '2025-06-01T10:00:00Z',
+  },
+  {
+    id: 'u-petani-01',
+    role: 'petani',
+    nama_lengkap: 'Ahmad Hidayat',
+    no_hp: '081234567891',
+    provinsi: 'Jawa Barat',
+    kabupaten: 'Bandung',
+    kecamatan: 'Lembang',
+    is_verified: true,
+    is_active: true,
+    rekening: {
+      metode: 'bank',
+      provider: 'BRI',
+      nomor: '0012-01-012345-56-7',
+      atas_nama: 'AHMAD HIDAYAT',
+    },
+    created_at: '2025-02-01T08:00:00Z',
+    updated_at: '2025-06-01T10:00:00Z',
+  },
+  {
+    id: 'u-petani-02',
+    role: 'petani',
+    nama_lengkap: 'Siti Aminah',
+    no_hp: '081234567892',
+    provinsi: 'Jawa Barat',
+    kabupaten: 'Bandung',
+    kecamatan: 'Lembang',
+    is_verified: true,
+    is_active: true,
+    created_at: '2025-02-10T08:00:00Z',
+    updated_at: '2025-06-01T10:00:00Z',
+  },
+  {
+    id: 'u-petani-03',
+    role: 'petani',
+    nama_lengkap: 'Budi Santoso',
+    no_hp: '081234567893',
+    provinsi: 'Jawa Barat',
+    kabupaten: 'Bandung',
+    kecamatan: 'Cisarua',
+    is_verified: true,
+    is_active: true,
+    created_at: '2025-03-01T08:00:00Z',
+    updated_at: '2025-06-01T10:00:00Z',
+  },
+  {
+    id: 'u-petani-04',
+    role: 'petani',
+    nama_lengkap: 'Dewi Lestari',
+    no_hp: '081234567894',
+    provinsi: 'Jawa Barat',
+    kabupaten: 'Bandung',
+    kecamatan: 'Lembang',
+    is_verified: true,
+    is_active: true,
+    created_at: '2025-03-15T08:00:00Z',
+    updated_at: '2025-06-01T10:00:00Z',
+  },
+  {
+    id: 'u-petani-05',
+    role: 'petani',
+    nama_lengkap: 'Eko Prasetyo',
+    no_hp: '081234567895',
+    provinsi: 'Jawa Barat',
+    kabupaten: 'Bandung',
+    kecamatan: 'Lembang',
+    is_verified: false,
+    is_active: true,
+    created_at: '2025-04-01T08:00:00Z',
+    updated_at: '2025-06-01T10:00:00Z',
+  },
+  {
+    id: 'u-supplier-01',
+    role: 'supplier',
+    nama_lengkap: 'Rini Hartono',
+    no_hp: '081234567896',
+    provinsi: 'DKI Jakarta',
+    kabupaten: 'Jakarta Selatan',
+    is_verified: true,
+    is_active: true,
+    created_at: '2025-01-20T08:00:00Z',
+    updated_at: '2025-06-01T10:00:00Z',
+  },
+  {
+    id: 'u-supplier-02',
+    role: 'supplier',
+    nama_lengkap: 'Hendro Wibowo',
+    no_hp: '081234567897',
+    provinsi: 'Jawa Timur',
+    kabupaten: 'Surabaya',
+    is_verified: true,
+    is_active: true,
+    created_at: '2025-02-05T08:00:00Z',
+    updated_at: '2025-06-01T10:00:00Z',
+  },
+  {
+    id: 'u-admin-01',
+    role: 'admin',
+    nama_lengkap: 'Admin TaniDirect',
+    no_hp: '081200000001',
+    provinsi: 'DKI Jakarta',
+    kabupaten: 'Jakarta Pusat',
+    is_verified: true,
+    is_active: true,
+    created_at: '2025-01-01T08:00:00Z',
+    updated_at: '2025-06-01T10:00:00Z',
+  },
+]
+
+// ============ POKTAN ============
+export const dummyPoktan: Poktan[] = [
+  {
+    id: 'pk-01',
+    ketua_id: 'u-ketua-01',
+    nama_poktan: 'Poktan Mekar Tani',
+    kode_poktan: 'PKT-JB-001',
+    desa: 'Lembang',
+    kecamatan: 'Lembang',
+    kabupaten: 'Bandung',
+    provinsi: 'Jawa Barat',
+    latitude: -6.8115,
+    longitude: 107.6168,
+    komoditas_utama: ['Tomat', 'Cabai Merah', 'Kubis', 'Wortel'],
+    jumlah_anggota: 5,
+    skor_qa: 87.5,
+    skor_ketepatan: 92.0,
+    total_transaksi: 24,
+    is_qa_certified: true,
+    tanggal_sertifikasi: '2025-03-01T00:00:00Z',
+    status_sertifikasi: 'aktif',
+    created_at: '2025-01-15T08:00:00Z',
+    updated_at: '2025-06-01T10:00:00Z',
+  },
+  {
+    id: 'pk-02',
+    ketua_id: 'u-petani-03',
+    nama_poktan: 'Poktan Sari Bumi',
+    kode_poktan: 'PKT-JB-002',
+    desa: 'Cisarua',
+    kecamatan: 'Cisarua',
+    kabupaten: 'Bandung',
+    provinsi: 'Jawa Barat',
+    latitude: -6.7855,
+    longitude: 107.5775,
+    komoditas_utama: ['Kentang', 'Kubis', 'Brokoli'],
+    jumlah_anggota: 8,
+    skor_qa: 78.0,
+    skor_ketepatan: 85.0,
+    total_transaksi: 16,
+    is_qa_certified: true,
+    tanggal_sertifikasi: '2025-04-01T00:00:00Z',
+    status_sertifikasi: 'aktif',
+    created_at: '2025-02-01T08:00:00Z',
+    updated_at: '2025-06-01T10:00:00Z',
+  },
+  {
+    id: 'pk-03',
+    ketua_id: 'u-petani-05',
+    nama_poktan: 'Poktan Maju Jaya',
+    kode_poktan: 'PKT-JT-001',
+    desa: 'Batu',
+    kecamatan: 'Batu',
+    kabupaten: 'Malang',
+    provinsi: 'Jawa Timur',
+    latitude: -7.8672,
+    longitude: 112.5239,
+    komoditas_utama: ['Bawang Merah', 'Cabai Rawit', 'Tomat'],
+    jumlah_anggota: 12,
+    skor_qa: 65.0,
+    skor_ketepatan: 70.0,
+    total_transaksi: 8,
+    is_qa_certified: false,
+    status_sertifikasi: 'belum',
+    created_at: '2025-03-01T08:00:00Z',
+    updated_at: '2025-06-01T10:00:00Z',
+  },
+]
+
+// ============ ANGGOTA POKTAN ============
+export const dummyAnggotaPoktan: AnggotaPoktan[] = [
+  { id: 'ap-01', poktan_id: 'pk-01', petani_id: 'u-petani-01', lahan_ha: 1.5, komoditas: ['Tomat', 'Cabai Merah'], status: 'aktif', tanggal_bergabung: '2025-02-01T08:00:00Z' },
+  { id: 'ap-02', poktan_id: 'pk-01', petani_id: 'u-petani-02', lahan_ha: 2.0, komoditas: ['Kubis', 'Wortel'], status: 'aktif', tanggal_bergabung: '2025-02-10T08:00:00Z' },
+  { id: 'ap-03', poktan_id: 'pk-01', petani_id: 'u-petani-04', lahan_ha: 0.8, komoditas: ['Tomat'], status: 'aktif', tanggal_bergabung: '2025-03-15T08:00:00Z' },
+  { id: 'ap-04', poktan_id: 'pk-01', petani_id: 'u-petani-05', lahan_ha: 1.2, komoditas: ['Cabai Merah', 'Cabai Rawit'], status: 'aktif', tanggal_bergabung: '2025-04-01T08:00:00Z' },
+  { id: 'ap-05', poktan_id: 'pk-01', petani_id: 'u-petani-03', lahan_ha: 3.0, komoditas: ['Kubis', 'Kentang', 'Wortel'], status: 'aktif', tanggal_bergabung: '2025-03-01T08:00:00Z' },
+]
+
+// ============ SUPPLIERS ============
+export const dummySuppliers: Supplier[] = [
+  {
+    id: 'sp-01',
+    user_id: 'u-supplier-01',
+    nama_perusahaan: 'PT Segar Nusantara',
+    npwp: '01.234.567.8-012.000',
+    jenis_usaha: 'Distributor Hortikultura',
+    kapasitas_bulanan_ton: 50,
+    wilayah_operasi: ['Jawa Barat', 'DKI Jakarta', 'Banten'],
+    deposit_escrow: 25000000,
+    rating: 4.6,
+    total_preorder: 18,
+    is_verified: true,
+    created_at: '2025-01-20T08:00:00Z',
+  },
+  {
+    id: 'sp-02',
+    user_id: 'u-supplier-02',
+    nama_perusahaan: 'CV Mitra Pangan Timur',
+    npwp: '02.345.678.9-345.000',
+    jenis_usaha: 'Restoran & Katering',
+    kapasitas_bulanan_ton: 20,
+    wilayah_operasi: ['Jawa Timur', 'Jawa Tengah'],
+    deposit_escrow: 12000000,
+    rating: 4.3,
+    total_preorder: 12,
+    is_verified: true,
+    created_at: '2025-02-05T08:00:00Z',
+  },
+]
+
+// ============ PRE-ORDERS ============
+export const dummyPreOrders: PreOrder[] = [
+  {
+    id: 'po-01',
+    supplier_id: 'sp-01',
+    komoditas: 'Tomat',
+    grade: 'A',
+    volume_kg: 5000,
+    harga_penawaran_per_kg: 12000,
+    tanggal_dibutuhkan: '2026-04-15',
+    wilayah_asal: 'Jawa Barat',
+    wilayah_tujuan: 'DKI Jakarta',
+    catatan_spesifikasi: 'Tomat segar, ukuran sedang-besar, warna merah merata',
+    deposit_dibayar: 6000000,
+    status: 'open',
+    created_at: '2026-03-18T08:00:00Z',
+    updated_at: '2026-03-18T08:00:00Z',
+  },
+  {
+    id: 'po-02',
+    supplier_id: 'sp-01',
+    komoditas: 'Cabai Merah',
+    grade: 'A',
+    volume_kg: 2000,
+    harga_penawaran_per_kg: 45000,
+    tanggal_dibutuhkan: '2026-04-10',
+    wilayah_tujuan: 'DKI Jakarta',
+    deposit_dibayar: 9000000,
+    status: 'matched',
+    poktan_matched_id: 'pk-01',
+    created_at: '2026-03-15T08:00:00Z',
+    updated_at: '2026-03-17T10:00:00Z',
+  },
+  {
+    id: 'po-03',
+    supplier_id: 'sp-02',
+    komoditas: 'Kubis',
+    grade: 'B',
+    volume_kg: 8000,
+    harga_penawaran_per_kg: 6000,
+    tanggal_dibutuhkan: '2026-04-20',
+    wilayah_tujuan: 'Jawa Timur',
+    deposit_dibayar: 4800000,
+    status: 'confirmed',
+    poktan_matched_id: 'pk-02',
+    created_at: '2026-03-10T08:00:00Z',
+    updated_at: '2026-03-16T10:00:00Z',
+  },
+  {
+    id: 'po-04',
+    supplier_id: 'sp-02',
+    komoditas: 'Kentang',
+    grade: 'A',
+    volume_kg: 3000,
+    harga_penawaran_per_kg: 15000,
+    tanggal_dibutuhkan: '2026-05-01',
+    wilayah_tujuan: 'Jawa Timur',
+    catatan_spesifikasi: 'Kentang granola, ukuran besar',
+    deposit_dibayar: 0,
+    status: 'open',
+    created_at: '2026-03-20T08:00:00Z',
+    updated_at: '2026-03-20T08:00:00Z',
+  },
+  {
+    id: 'po-05',
+    supplier_id: 'sp-01',
+    komoditas: 'Wortel',
+    grade: 'A',
+    volume_kg: 3000,
+    harga_penawaran_per_kg: 10000,
+    tanggal_dibutuhkan: '2026-04-25',
+    wilayah_tujuan: 'DKI Jakarta',
+    deposit_dibayar: 3000000,
+    status: 'fulfilled',
+    poktan_matched_id: 'pk-01',
+    created_at: '2026-02-20T08:00:00Z',
+    updated_at: '2026-03-10T10:00:00Z',
+  },
+]
+
+// ============ TRANSAKSI ============
+export const dummyTransaksi: Transaksi[] = [
+  {
+    id: 'tx-01',
+    pre_order_id: 'po-02',
+    poktan_id: 'pk-01',
+    supplier_id: 'sp-01',
+    komoditas: 'Cabai Merah',
+    grade: 'A',
+    volume_estimasi_kg: 2000,
+    harga_per_kg: 45000,
+    total_nilai: 90000000,
+    komisi_platform: 1800000,
+    status: 'dikonfirmasi',
+    tanggal_panen_estimasi: '2026-04-05',
+    created_at: '2026-03-17T10:00:00Z',
+    updated_at: '2026-03-17T10:00:00Z',
+  },
+  {
+    id: 'tx-02',
+    pre_order_id: 'po-03',
+    poktan_id: 'pk-02',
+    supplier_id: 'sp-02',
+    komoditas: 'Kubis',
+    grade: 'B',
+    volume_estimasi_kg: 8000,
+    volume_aktual_kg: 7850,
+    harga_per_kg: 6000,
+    total_nilai: 47100000,
+    komisi_platform: 942000,
+    status: 'dalam_pengiriman',
+    tanggal_panen_estimasi: '2026-03-25',
+    created_at: '2026-03-16T10:00:00Z',
+    updated_at: '2026-03-20T14:00:00Z',
+  },
+  {
+    id: 'tx-03',
+    pre_order_id: 'po-05',
+    poktan_id: 'pk-01',
+    supplier_id: 'sp-01',
+    komoditas: 'Wortel',
+    grade: 'A',
+    volume_estimasi_kg: 3000,
+    volume_aktual_kg: 2950,
+    harga_per_kg: 10000,
+    total_nilai: 29500000,
+    komisi_platform: 590000,
+    status: 'selesai',
+    tanggal_panen_estimasi: '2026-03-01',
+    tanggal_serah_terima: '2026-03-08T16:00:00Z',
+    created_at: '2026-02-25T10:00:00Z',
+    updated_at: '2026-03-10T10:00:00Z',
+  },
+  {
+    id: 'tx-04',
+    poktan_id: 'pk-01',
+    supplier_id: 'sp-02',
+    komoditas: 'Tomat',
+    grade: 'A',
+    volume_estimasi_kg: 4000,
+    volume_aktual_kg: 3900,
+    harga_per_kg: 11000,
+    total_nilai: 42900000,
+    komisi_platform: 858000,
+    status: 'selesai',
+    tanggal_serah_terima: '2026-02-20T10:00:00Z',
+    created_at: '2026-02-05T10:00:00Z',
+    updated_at: '2026-02-20T10:00:00Z',
+  },
+  {
+    id: 'tx-05',
+    poktan_id: 'pk-01',
+    supplier_id: 'sp-01',
+    komoditas: 'Cabai Merah',
+    grade: 'B',
+    volume_estimasi_kg: 1500,
+    volume_aktual_kg: 1480,
+    harga_per_kg: 38000,
+    total_nilai: 56240000,
+    komisi_platform: 1124800,
+    status: 'selesai',
+    tanggal_serah_terima: '2026-01-28T10:00:00Z',
+    created_at: '2026-01-10T10:00:00Z',
+    updated_at: '2026-01-28T10:00:00Z',
+  },
+]
+
+// ============ KONTRIBUSI PETANI ============
+export const dummyKontribusi: KontribusiPetani[] = [
+  { id: 'kp-01', transaksi_id: 'tx-01', petani_id: 'u-petani-01', volume_kg: 800, harga_diterima: 35280000, status_bayar: 'pending' },
+  { id: 'kp-02', transaksi_id: 'tx-01', petani_id: 'u-petani-04', volume_kg: 500, harga_diterima: 22050000, status_bayar: 'pending' },
+  { id: 'kp-03', transaksi_id: 'tx-01', petani_id: 'u-petani-05', volume_kg: 700, harga_diterima: 30870000, status_bayar: 'pending' },
+  { id: 'kp-04', transaksi_id: 'tx-03', petani_id: 'u-petani-02', volume_kg: 1500, harga_diterima: 14700000, status_bayar: 'dibayar', tanggal_bayar: '2026-03-12T10:00:00Z' },
+  { id: 'kp-05', transaksi_id: 'tx-03', petani_id: 'u-petani-03', volume_kg: 1450, harga_diterima: 14210000, status_bayar: 'dibayar', tanggal_bayar: '2026-03-12T10:00:00Z' },
+  { id: 'kp-06', transaksi_id: 'tx-04', petani_id: 'u-petani-01', volume_kg: 2000, harga_diterima: 21560000, status_bayar: 'dibayar', tanggal_bayar: '2026-02-25T10:00:00Z' },
+  { id: 'kp-07', transaksi_id: 'tx-04', petani_id: 'u-petani-04', volume_kg: 1900, harga_diterima: 20482000, status_bayar: 'dibayar', tanggal_bayar: '2026-02-25T10:00:00Z' },
+  { id: 'kp-08', transaksi_id: 'tx-05', petani_id: 'u-petani-01', volume_kg: 750, harga_diterima: 27930000, status_bayar: 'dibayar', tanggal_bayar: '2026-02-01T10:00:00Z' },
+  { id: 'kp-09', transaksi_id: 'tx-05', petani_id: 'u-petani-05', volume_kg: 730, harga_diterima: 27186000, status_bayar: 'dibayar', tanggal_bayar: '2026-02-01T10:00:00Z' },
+]
+
+// ============ QA INSPEKSI ============
+export const dummyQAInspeksi: QAInspeksi[] = [
+  {
+    id: 'qa-01',
+    transaksi_id: 'tx-01',
+    poktan_id: 'pk-01',
+    inspektor_id: 'u-ketua-01',
+    jenis_inspektor: 'ketua_poktan',
+    komoditas: 'Cabai Merah',
+    volume_inspeksi_kg: 2000,
+    status: 'pending',
+    foto_urls: [],
+    fee_qa: 900000,
+    fee_dibayar: 0,
+    potongan_fee_persen: 0,
+    created_at: '2026-03-19T08:00:00Z',
+  },
+  {
+    id: 'qa-02',
+    transaksi_id: 'tx-02',
+    poktan_id: 'pk-02',
+    inspektor_id: 'u-petani-03',
+    jenis_inspektor: 'ketua_poktan',
+    komoditas: 'Kubis',
+    volume_inspeksi_kg: 7850,
+    grade_hasil: 'B',
+    skor_kualitas: 82,
+    foto_urls: ['/demo/qa-kubis-1.jpg', '/demo/qa-kubis-2.jpg', '/demo/qa-kubis-3.jpg'],
+    catatan_inspektor: 'Kualitas baik, sedikit daun luar yang perlu dipotong',
+    status: 'lulus',
+    penyimpangan_persen: 1.9,
+    fee_qa: 471000,
+    fee_dibayar: 471000,
+    potongan_fee_persen: 0,
+    created_at: '2026-03-19T10:00:00Z',
+  },
+  {
+    id: 'qa-03',
+    transaksi_id: 'tx-03',
+    poktan_id: 'pk-01',
+    inspektor_id: 'u-ketua-01',
+    jenis_inspektor: 'ketua_poktan',
+    komoditas: 'Wortel',
+    volume_inspeksi_kg: 2950,
+    grade_hasil: 'A',
+    skor_kualitas: 91,
+    foto_urls: ['/demo/qa-wortel-1.jpg', '/demo/qa-wortel-2.jpg', '/demo/qa-wortel-3.jpg'],
+    catatan_inspektor: 'Wortel segar, ukuran seragam, warna oranye cerah',
+    status: 'lulus',
+    penyimpangan_persen: 1.7,
+    fee_qa: 295000,
+    fee_dibayar: 295000,
+    potongan_fee_persen: 0,
+    created_at: '2026-03-05T08:00:00Z',
+  },
+]
+
+// ============ LOGISTIK ============
+export const dummyLogistik: Logistik[] = [
+  {
+    id: 'lg-01',
+    transaksi_id: 'tx-02',
+    tier: 'first_mile',
+    transporter_nama: 'Pak Dedi',
+    transporter_hp: '081299887766',
+    kendaraan_plat: 'D 1234 AB',
+    titik_asal: 'Poktan Sari Bumi, Cisarua',
+    titik_tujuan: 'Gudang Transit Bandung',
+    latitude_asal: -6.7855,
+    longitude_asal: 107.5775,
+    latitude_tujuan: -6.9175,
+    longitude_tujuan: 107.6191,
+    estimasi_tiba: '2026-03-21T14:00:00Z',
+    status: 'dalam_perjalanan',
+    foto_muat_urls: ['/demo/muat-kubis-1.jpg'],
+    foto_tiba_urls: [],
+    last_update_posisi: 'Melewati Padalarang',
+    last_update_at: '2026-03-21T11:30:00Z',
+    asuransi_kargo: true,
+    biaya_logistik: 1500000,
+    created_at: '2026-03-20T16:00:00Z',
+  },
+  {
+    id: 'lg-02',
+    transaksi_id: 'tx-02',
+    tier: 'middle_mile',
+    transporter_nama: 'PT Logistik Cepat',
+    transporter_hp: '02187654321',
+    titik_asal: 'Gudang Transit Bandung',
+    titik_tujuan: 'Gudang Supplier Surabaya',
+    latitude_asal: -6.9175,
+    longitude_asal: 107.6191,
+    latitude_tujuan: -7.2575,
+    longitude_tujuan: 112.7521,
+    status: 'menunggu_muat',
+    foto_muat_urls: [],
+    foto_tiba_urls: [],
+    asuransi_kargo: true,
+    biaya_logistik: 4500000,
+    created_at: '2026-03-20T16:00:00Z',
+  },
+]
+
+// ============ KREDIT ============
+export const dummyKredit: Kredit[] = [
+  {
+    id: 'kr-01',
+    petani_id: 'u-petani-01',
+    poktan_id: 'pk-01',
+    jumlah_diajukan: 5000000,
+    jumlah_disetujui: 5000000,
+    tenor_bulan: 6,
+    bunga_persen: 0.5,
+    status: 'aktif',
+    ai_skor: 82,
+    ai_kategori: 'Baik',
+    tujuan_penggunaan: 'Pembelian bibit cabai dan pupuk organik',
+    tanggal_pengajuan: '2026-02-01T08:00:00Z',
+    tanggal_keputusan: '2026-02-03T10:00:00Z',
+    tanggal_jatuh_tempo: '2026-08-01',
+    created_at: '2026-02-01T08:00:00Z',
+  },
+  {
+    id: 'kr-02',
+    petani_id: 'u-petani-02',
+    poktan_id: 'pk-01',
+    jumlah_diajukan: 8000000,
+    tenor_bulan: 4,
+    status: 'pending',
+    ai_skor: 68,
+    ai_kategori: 'Cukup',
+    tujuan_penggunaan: 'Sewa alat bajak dan pembelian pupuk',
+    tanggal_pengajuan: '2026-03-18T08:00:00Z',
+    created_at: '2026-03-18T08:00:00Z',
+  },
+]
+
+// ============ CICILAN KREDIT ============
+export const dummyCicilan: CicilanKredit[] = [
+  { id: 'cc-01', kredit_id: 'kr-01', nomor_cicilan: 1, jumlah_cicilan: 858333, tanggal_jatuh_tempo: '2026-03-01', tanggal_bayar: '2026-02-28T10:00:00Z', status: 'lunas' },
+  { id: 'cc-02', kredit_id: 'kr-01', nomor_cicilan: 2, jumlah_cicilan: 858333, tanggal_jatuh_tempo: '2026-04-01', status: 'belum_bayar' },
+  { id: 'cc-03', kredit_id: 'kr-01', nomor_cicilan: 3, jumlah_cicilan: 858333, tanggal_jatuh_tempo: '2026-05-01', status: 'belum_bayar' },
+  { id: 'cc-04', kredit_id: 'kr-01', nomor_cicilan: 4, jumlah_cicilan: 858333, tanggal_jatuh_tempo: '2026-06-01', status: 'belum_bayar' },
+  { id: 'cc-05', kredit_id: 'kr-01', nomor_cicilan: 5, jumlah_cicilan: 858333, tanggal_jatuh_tempo: '2026-07-01', status: 'belum_bayar' },
+  { id: 'cc-06', kredit_id: 'kr-01', nomor_cicilan: 6, jumlah_cicilan: 858335, tanggal_jatuh_tempo: '2026-08-01', status: 'belum_bayar' },
+]
+
+// ============ ANOMALI LOG ============
+export const dummyAnomali: AnomaliLog[] = [
+  {
+    id: 'an-01',
+    poktan_id: 'pk-03',
+    tingkat_risiko: 'tinggi',
+    temuan: {
+      kategori: 'A02',
+      deskripsi: 'Volume aktual konsisten 25% lebih rendah dari estimasi dalam 3 transaksi terakhir',
+      data: { avg_deviasi: 25.3, transaksi_count: 3 },
+    },
+    rekomendasi: 'Investigasi lahan dan metode estimasi poktan. Pertimbangkan pelatihan QA.',
+    status_tindak_lanjut: 'open',
+    scanned_at: '2026-03-20T06:00:00Z',
+  },
+  {
+    id: 'an-02',
+    poktan_id: 'pk-03',
+    tingkat_risiko: 'sedang',
+    temuan: {
+      kategori: 'A04',
+      deskripsi: 'Skor QA turun dari 78 ke 65 dalam 2 bulan terakhir',
+      data: { skor_sebelum: 78, skor_sekarang: 65 },
+    },
+    rekomendasi: 'Review proses QA internal poktan.',
+    status_tindak_lanjut: 'open',
+    scanned_at: '2026-03-19T06:00:00Z',
+  },
+  {
+    id: 'an-03',
+    poktan_id: 'pk-02',
+    tingkat_risiko: 'rendah',
+    temuan: {
+      kategori: 'A05',
+      deskripsi: 'Keterlambatan pengiriman 2 hari pada transaksi terakhir',
+      data: { hari_terlambat: 2, transaksi_id: 'tx-old-01' },
+    },
+    rekomendasi: 'Monitor, kemungkinan karena cuaca buruk.',
+    status_tindak_lanjut: 'selesai',
+    ditangani_oleh: 'u-admin-01',
+    catatan_admin: 'Terverifikasi karena banjir di rute pengiriman. Cleared.',
+    scanned_at: '2026-03-10T06:00:00Z',
+    resolved_at: '2026-03-11T10:00:00Z',
+  },
+]
+
+// ============ HARGA HISTORIS ============
+function generateHargaHistoris(): HargaHistoris[] {
+  const data: HargaHistoris[] = []
+  const items = [
+    { komoditas: 'Tomat', base: 10000, volatility: 3000 },
+    { komoditas: 'Cabai Merah', base: 40000, volatility: 15000 },
+    { komoditas: 'Kubis', base: 5500, volatility: 1500 },
+    { komoditas: 'Wortel', base: 9000, volatility: 2000 },
+    { komoditas: 'Kentang', base: 13000, volatility: 3000 },
+    { komoditas: 'Bawang Merah', base: 30000, volatility: 10000 },
+  ]
+
+  let id = 0
+  for (const item of items) {
+    for (let week = 12; week >= 0; week--) {
+      const date = new Date()
+      date.setDate(date.getDate() - week * 7)
+      const monday = new Date(date)
+      monday.setDate(monday.getDate() - monday.getDay() + 1)
+
+      const variation = (Math.sin(week * 0.8) * item.volatility * 0.5) +
+        ((Math.random() - 0.5) * item.volatility * 0.3)
+
+      data.push({
+        id: `hh-${++id}`,
+        komoditas: item.komoditas,
+        wilayah: 'Jawa Barat',
+        harga_per_kg: Math.round(item.base + variation),
+        volume_total_kg: Math.round(5000 + Math.random() * 15000),
+        minggu: monday.toISOString().split('T')[0],
+        created_at: monday.toISOString(),
+      })
+    }
+  }
+  return data
+}
+
+export const dummyHargaHistoris: HargaHistoris[] = generateHargaHistoris()
+
+// ============ PREDIKSI HARGA ============
+export const dummyPrediksiHarga: PrediksiHarga[] = [
+  {
+    id: 'ph-01',
+    komoditas: 'Cabai Merah',
+    wilayah: 'Jawa Barat',
+    tren: 'naik',
+    estimasi_2_minggu: { min: 42000, max: 50000, median: 46000 },
+    estimasi_4_minggu: { min: 38000, max: 55000, median: 48000 },
+    faktor_penentu: ['Cuaca hujan tinggi', 'Permintaan Ramadan', 'Stok menurun'],
+    catatan_penting: 'Harga cabai cenderung naik menjelang Ramadan. Disarankan untuk mengamankan stok sekarang.',
+    valid_hingga: '2026-03-28',
+    created_at: '2026-03-21T06:00:00Z',
+  },
+]
+
+// ============ NOTIFIKASI ============
+export const dummyNotifikasi: Notifikasi[] = [
+  { id: 'nf-01', user_id: 'u-ketua-01', judul: 'Pre-Order Baru', pesan: 'Ada pre-order Tomat 5 ton dari PT Segar Nusantara yang cocok dengan poktan Anda', tipe: 'preorder', link: '/poktan/pre-order', is_read: false, created_at: '2026-03-21T08:00:00Z' },
+  { id: 'nf-02', user_id: 'u-ketua-01', judul: 'QA Diperlukan', pesan: 'Transaksi TX-01 Cabai Merah menunggu inspeksi QA dari Anda', tipe: 'qa', link: '/poktan/qa', is_read: false, created_at: '2026-03-20T14:00:00Z' },
+  { id: 'nf-03', user_id: 'u-ketua-01', judul: 'Pengiriman Diupdate', pesan: 'Kubis sedang dalam perjalanan ke Gudang Transit Bandung', tipe: 'logistik', link: '/poktan/logistik', is_read: true, created_at: '2026-03-20T11:30:00Z' },
+  { id: 'nf-04', user_id: 'u-ketua-01', judul: 'Pembayaran Diterima', pesan: 'Pembayaran untuk transaksi Wortel telah masuk ke akun poktan', tipe: 'pembayaran', link: '/poktan/dashboard', is_read: true, created_at: '2026-03-12T10:00:00Z' },
+  { id: 'nf-05', user_id: 'u-supplier-01', judul: 'Poktan Matched', pesan: 'Pre-order Cabai Merah Anda telah di-match dengan Poktan Mekar Tani', tipe: 'matching', link: '/supplier/pre-order/po-02', is_read: false, created_at: '2026-03-17T10:00:00Z' },
+  { id: 'nf-06', user_id: 'u-supplier-01', judul: 'Wortel Tiba', pesan: 'Pesanan Wortel dari Poktan Mekar Tani telah tiba di gudang Anda', tipe: 'logistik', link: '/supplier/transaksi', is_read: true, created_at: '2026-03-08T16:00:00Z' },
+  { id: 'nf-07', user_id: 'u-petani-01', judul: 'Pembayaran Masuk', pesan: 'Anda menerima pembayaran Rp 21.560.000 dari transaksi Tomat', tipe: 'pembayaran', link: '/petani/riwayat', is_read: true, created_at: '2026-02-25T10:00:00Z' },
+  { id: 'nf-08', user_id: 'u-admin-01', judul: 'Anomali Terdeteksi', pesan: 'Anomali tingkat TINGGI terdeteksi pada Poktan Maju Jaya', tipe: 'anomali', link: '/admin/compliance', is_read: false, created_at: '2026-03-20T06:00:00Z' },
+]
+
+// ============ PENCAIRAN ============
+export const dummyPencairan: Pencairan[] = [
+  {
+    id: 'pc-01',
+    petani_id: 'u-petani-01',
+    jumlah: 21560000,
+    biaya_admin: 2500,
+    jumlah_diterima: 21557500,
+    rekening: { metode: 'bank', provider: 'BRI', nomor: '0012-01-012345-56-7', atas_nama: 'AHMAD HIDAYAT' },
+    status: 'berhasil',
+    created_at: '2026-02-26T08:00:00Z',
+    selesai_at: '2026-02-26T14:00:00Z',
+  },
+  {
+    id: 'pc-02',
+    petani_id: 'u-petani-01',
+    jumlah: 27930000,
+    biaya_admin: 2500,
+    jumlah_diterima: 27927500,
+    rekening: { metode: 'bank', provider: 'BRI', nomor: '0012-01-012345-56-7', atas_nama: 'AHMAD HIDAYAT' },
+    status: 'berhasil',
+    created_at: '2026-02-02T08:00:00Z',
+    selesai_at: '2026-02-02T15:00:00Z',
+  },
+]
+
+export function getPencairanByPetaniId(petaniId: string) {
+  return dummyPencairan
+    .filter(p => p.petani_id === petaniId)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+}
+
+// ============ HELPER: GET BY ROLE ============
+export function getUsersByRole(role: string) {
+  return dummyUsers.filter(u => u.role === role)
+}
+
+export function getPoktanByKetuaId(ketuaId: string) {
+  return dummyPoktan.find(p => p.ketua_id === ketuaId)
+}
+
+export function getAnggotaByPoktanId(poktanId: string) {
+  return dummyAnggotaPoktan
+    .filter(a => a.poktan_id === poktanId)
+    .map(a => ({
+      ...a,
+      petani: dummyUsers.find(u => u.id === a.petani_id),
+    }))
+}
+
+export function getSupplierByUserId(userId: string) {
+  return dummySuppliers.find(s => s.user_id === userId)
+}
+
+export function getTransaksiByPoktanId(poktanId: string) {
+  return dummyTransaksi.filter(t => t.poktan_id === poktanId)
+}
+
+export function getTransaksiBySupplierUserid(userId: string) {
+  const supplier = getSupplierByUserId(userId)
+  if (!supplier) return []
+  return dummyTransaksi.filter(t => t.supplier_id === supplier.id)
+}
+
+export function getPreOrdersBySupplierId(supplierId: string) {
+  return dummyPreOrders.filter(p => p.supplier_id === supplierId)
+}
+
+export function getNotifikasiByUserId(userId: string) {
+  return dummyNotifikasi.filter(n => n.user_id === userId).sort((a, b) =>
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  )
+}
+
+export function getKontribusiByPetaniId(petaniId: string) {
+  return dummyKontribusi
+    .filter(k => k.petani_id === petaniId)
+    .map(k => ({
+      ...k,
+      transaksi: dummyTransaksi.find(t => t.id === k.transaksi_id),
+    }))
+}
+
+export function getKreditByPetaniId(petaniId: string) {
+  return dummyKredit.filter(k => k.petani_id === petaniId)
+}
+
+// Current demo user (simulated auth)
+export const DEMO_USERS = {
+  ketua_poktan: dummyUsers.find(u => u.id === 'u-ketua-01')!,
+  petani: dummyUsers.find(u => u.id === 'u-petani-01')!,
+  supplier: dummyUsers.find(u => u.id === 'u-supplier-01')!,
+  admin: dummyUsers.find(u => u.id === 'u-admin-01')!,
+}
