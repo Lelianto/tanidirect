@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { KomoditasCard } from '@/components/shared/KomoditasCard'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import {
   Dialog,
@@ -31,7 +32,7 @@ import { getSupplierByUserId, getPreOrdersBySupplierId } from '@/lib/dummy'
 import { formatRupiah, formatKg } from '@/lib/utils/currency'
 import { KOMODITAS } from '@/lib/constants/komoditas'
 import { PROVINSI } from '@/lib/constants/wilayah'
-import { Plus, Package, Search } from 'lucide-react'
+import { Plus, Package } from 'lucide-react'
 import Link from 'next/link'
 import type { StatusPreOrder } from '@/types'
 
@@ -58,6 +59,7 @@ export default function SupplierPreOrderPage() {
     tanggal_dibutuhkan: '',
     wilayah_tujuan: '',
     catatan_spesifikasi: '',
+    catatan_kualitas: '',
   })
 
   const volume = Number(form.volume_kg) || 0
@@ -86,6 +88,7 @@ export default function SupplierPreOrderPage() {
       tanggal_dibutuhkan: '',
       wilayah_tujuan: '',
       catatan_spesifikasi: '',
+      catatan_kualitas: '',
     })
   }
 
@@ -99,7 +102,7 @@ export default function SupplierPreOrderPage() {
               <Plus className="h-5 w-5 mr-2" />
               Buat Pre-Order Baru
           </DialogTrigger>
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-[calc(100%-4rem)] sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Buat Pre-Order Baru</DialogTitle>
               <DialogDescription>
@@ -191,6 +194,24 @@ export default function SupplierPreOrderPage() {
                   />
                 </div>
 
+                <Separator />
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label>Catatan Kualitas untuk QA</Label>
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Opsional</Badge>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground -mt-1">
+                    AI akan mengubah catatan ini menjadi tahap pengecekan tambahan di form QA
+                  </p>
+                  <Textarea
+                    placeholder="Contoh: Buah harus firm saat ditekan, tangkai masih hijau segar..."
+                    value={form.catatan_kualitas}
+                    onChange={(e) => handleFormChange('catatan_kualitas', e.target.value)}
+                    rows={2}
+                  />
+                </div>
+
                 {totalNilai > 0 && (
                   <Card className="bg-muted/50 shadow-none border-dashed">
                     <CardContent className="p-3 space-y-1.5">
@@ -247,6 +268,18 @@ export default function SupplierPreOrderPage() {
                         <div>
                           <p className="text-xs text-muted-foreground mb-1">Catatan Spesifikasi</p>
                           <p className="text-sm">{form.catatan_spesifikasi}</p>
+                        </div>
+                      </>
+                    )}
+                    {form.catatan_kualitas && (
+                      <>
+                        <Separator />
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Catatan Kualitas untuk QA</p>
+                          <p className="text-sm">{form.catatan_kualitas}</p>
+                          <p className="text-[10px] text-tani-blue mt-1">
+                            AI akan memproses catatan ini menjadi tahap QA setelah pre-order dibuat
+                          </p>
                         </div>
                       </>
                     )}

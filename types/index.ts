@@ -102,6 +102,12 @@ export interface Supplier {
   user?: User
 }
 
+export interface SupplierQAStep {
+  id: string
+  parameter: string
+  kriteria: string
+}
+
 export interface PreOrder {
   id: string
   supplier_id: string
@@ -113,6 +119,8 @@ export interface PreOrder {
   wilayah_asal?: string
   wilayah_tujuan: string
   catatan_spesifikasi?: string
+  catatan_kualitas_supplier?: string
+  ai_qa_steps?: SupplierQAStep[]
   deposit_dibayar: number
   status: StatusPreOrder
   poktan_matched_id?: string
@@ -175,6 +183,11 @@ export interface QAInspeksi {
   fee_qa: number
   fee_dibayar: number
   potongan_fee_persen: number
+  grade_rekomendasi_sistem?: string
+  grade_override_reason?: string
+  supplier_review_status?: 'pending' | 'approved' | 'disputed'
+  supplier_review_catatan?: string
+  supplier_reviewed_at?: string
   created_at: string
 }
 

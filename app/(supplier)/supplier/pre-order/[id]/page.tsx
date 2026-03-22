@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -8,18 +8,26 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { useAuthStore } from '@/store'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+  DialogDescription, DialogFooter,
+} from '@/components/ui/dialog'
 import {
   dummyPreOrders, dummyPoktan, dummyTransaksi,
-  dummyQAInspeksi, dummyLogistik, dummyUsers,
+  dummyQAInspeksi, dummyLogistik,
 } from '@/lib/dummy'
+import { getQAForm } from '@/lib/data/qa-forms'
 import { formatRupiah, formatKg } from '@/lib/utils/currency'
 import { formatTanggal, formatWaktu, timeAgo } from '@/lib/utils/date'
 import { GRADE_COLORS } from '@/lib/constants/komoditas'
+import type { SupplierQAStep } from '@/types'
 import {
   ArrowLeft, MapPin, Calendar, Truck, ClipboardCheck,
   CheckCircle, XCircle, Clock, Package, Star, AlertCircle,
-  Phone, User,
+  ShieldCheck, Sparkles, Loader2, FileText,
+  ChevronDown, ChevronRight, Eye,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -58,6 +66,52 @@ export default function PreOrderDetailPage() {
     : []
 
   const currentStep = preOrder ? STATUS_ORDER[preOrder.status] ?? -1 : 0
+  const qaForm = preOrder ? getQAForm(preOrder.komoditas) : null
+
+  // Catatan kualitas state
+  const [catatanKualitas, setCatatanKualitas] = useState(preOrder?.catatan_kualitas_supplier || '')
+  const [aiSteps, setAiSteps] = useState<SupplierQAStep[]>(preOrder?.ai_qa_steps || [])
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [isSaved, setIsSaved] = useState(!!preOrder?.catatan_kualitas_supplier)
+
+  // QA form viewer
+  const [qaFormOpen, setQaFormOpen] = useState(false)
+  const [expandedQASections, setExpandedQASections] = useState<Set<string>>(new Set())
+
+  function toggleQASection(sectionId: string) {
+    setExpandedQASections((prev) => {
+      const next = new Set(prev)
+      if (next.has(sectionId)) next.delete(sectionId)
+      else next.add(sectionId)
+      return next
+    })
+  }
+
+  async function handleGenerateQASteps() {
+    if (!preOrder || !catatanKualitas.trim()) return
+    setIsGenerating(true)
+    try {
+      const res = await fetch('/api/ai/qa-notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          catatan: catatanKualitas,
+          komoditas: preOrder.komoditas,
+          grade: preOrder.grade,
+        }),
+      })
+      const data = await res.json()
+      if (data.steps && data.steps.length > 0) {
+        setAiSteps(data.steps)
+      }
+      setIsSaved(true)
+    } catch {
+      // Fallback: just save the text
+      setIsSaved(true)
+    } finally {
+      setIsGenerating(false)
+    }
+  }
 
   if (!preOrder) {
     return (
@@ -212,6 +266,105 @@ export default function PreOrderDetailPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Catatan Kualitas Supplier */}
+        <Card className="shadow-sm border-tani-green/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-tani-green" />
+              Catatan Kualitas untuk QA
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Tambahkan catatan kualitas penting. AI akan mengubahnya menjadi tahap pengecekan QA.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-xs">Catatan Kualitas</Label>
+              <Textarea
+                placeholder="Contoh: Tomat harus firm saat ditekan, tangkai masih hijau segar, tidak boleh ada bercak hitam..."
+                value={catatanKualitas}
+                onChange={(e) => { setCatatanKualitas(e.target.value); setIsSaved(false) }}
+                rows={3}
+                className="text-sm"
+              />
+            </div>
+            <Button
+              className="w-full bg-tani-green hover:bg-tani-green/90 text-white"
+              disabled={!catatanKualitas.trim() || isGenerating}
+              onClick={handleGenerateQASteps}
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Memproses dengan AI...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  {isSaved && aiSteps.length > 0 ? 'Perbarui Tahap QA' : 'Generate Tahap QA dengan AI'}
+                </>
+              )}
+            </Button>
+
+            {/* AI-generated QA Steps */}
+            {aiSteps.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-3.5 w-3.5 text-tani-blue" />
+                  <span className="text-xs font-semibold text-tani-blue">
+                    Tahap QA dari Catatan Supplier
+                  </span>
+                </div>
+                {aiSteps.map((step, i) => (
+                  <div key={step.id} className="bg-blue-50 rounded-lg p-3 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-white bg-tani-blue rounded-full h-5 w-5 flex items-center justify-center shrink-0">
+                        {i + 1}
+                      </span>
+                      <p className="text-xs font-semibold text-foreground">{step.parameter}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground ml-7">{step.kriteria}</p>
+                  </div>
+                ))}
+                <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3 text-tani-green" />
+                  Tahap ini akan muncul di form QA inspektor sebagai section terpisah
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Lihat Form QA */}
+        {qaForm && (
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  Form Pengecekan QA
+                </CardTitle>
+                <Badge variant="secondary" className="text-[10px]">
+                  {qaForm.referensi}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {qaForm.label} — {qaForm.sections.reduce((sum, s) => sum + s.parameters.length, 0)} parameter
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setQaFormOpen(true)}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Lihat Detail Form QA
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Poktan Info (if matched) */}
         {poktan && (
@@ -376,6 +529,121 @@ export default function PreOrderDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Dialog: Lihat Form QA */}
+      {qaForm && (
+        <Dialog open={qaFormOpen} onOpenChange={(v: boolean) => setQaFormOpen(v)}>
+          <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-base">
+                Form QA: {qaForm.label}
+              </DialogTitle>
+              <DialogDescription>
+                {qaForm.referensi} — {qaForm.sections.reduce((sum, s) => sum + s.parameters.length, 0)} parameter pengecekan
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3">
+              {/* Supplier QA Steps (if any) */}
+              {aiSteps.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-3.5 w-3.5 text-tani-blue" />
+                    <span className="text-xs font-semibold text-tani-blue">
+                      Permintaan Khusus Supplier
+                    </span>
+                  </div>
+                  {aiSteps.map((step, i) => (
+                    <div key={step.id} className="bg-blue-50 rounded-lg p-3 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-white bg-tani-blue rounded-full h-5 w-5 flex items-center justify-center shrink-0">
+                          S{i + 1}
+                        </span>
+                        <p className="text-xs font-semibold">{step.parameter}</p>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground ml-7">{step.kriteria}</p>
+                    </div>
+                  ))}
+                  <Separator />
+                </div>
+              )}
+
+              {/* SNI Sections */}
+              {qaForm.sections.map((section) => {
+                const isExpanded = expandedQASections.has(section.id)
+                return (
+                  <div key={section.id} className="border rounded-lg overflow-hidden">
+                    <button
+                      type="button"
+                      className="w-full flex items-center justify-between p-3 text-left hover:bg-muted/30 transition-colors"
+                      onClick={() => toggleQASection(section.id)}
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        {isExpanded ? (
+                          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold leading-tight">
+                            {section.id}. {section.title}
+                          </p>
+                          {section.wajibLulusSemua && (
+                            <span className="text-[10px] text-tani-amber font-medium">Wajib lulus semua</span>
+                          )}
+                        </div>
+                      </div>
+                      <Badge variant="secondary" className="text-[10px] shrink-0 ml-2">
+                        {section.parameters.length}
+                      </Badge>
+                    </button>
+                    {isExpanded && (
+                      <div className="border-t">
+                        {section.parameters.map((param, idx) => (
+                          <div
+                            key={param.no}
+                            className={`px-3 py-2.5 ${idx > 0 ? 'border-t border-border/50' : ''}`}
+                          >
+                            <div className="flex items-start gap-2">
+                              <span className="text-[10px] font-bold text-muted-foreground bg-muted rounded-full h-4 w-4 flex items-center justify-center shrink-0 mt-0.5">
+                                {param.no}
+                              </span>
+                              <div>
+                                <p className="text-xs font-medium">{param.parameter}</p>
+                                <p className="text-[11px] text-muted-foreground mt-0.5">{param.kriteria}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+
+              {/* Grade Info */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold">Penentuan Grade</p>
+                {qaForm.grades.map((g) => (
+                  <div key={g.grade} className="bg-muted/50 rounded-lg p-2.5">
+                    <p className="text-xs font-semibold">{g.grade}</p>
+                    <p className="text-[11px] text-muted-foreground">{g.kriteria}</p>
+                    {g.toleransi !== '\u2014' && (
+                      <p className="text-[10px] text-muted-foreground">Toleransi: {g.toleransi}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setQaFormOpen(false)}>
+                Tutup
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   )
 }
