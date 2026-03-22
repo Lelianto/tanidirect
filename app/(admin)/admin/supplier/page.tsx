@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,6 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { dummySuppliers, dummyUsers } from '@/lib/dummy'
 import { formatRupiah } from '@/lib/utils/currency'
 import {
   Building2, MoreVertical, Eye, CheckCircle, Star, MapPin, ShieldCheck, Package,
@@ -20,19 +19,24 @@ import {
 
 export default function AdminSupplierPage() {
   const [filterVerified, setFilterVerified] = useState('all')
+  const [allSuppliers, setAllSuppliers] = useState<any[]>([])
+
+  useEffect(() => {
+    fetch('/api/admin/supplier')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setAllSuppliers(data.suppliers || [])
+      })
+      .catch(() => {})
+  }, [])
 
   const suppliers = useMemo(() => {
-    return dummySuppliers
-      .map((s) => ({
-        ...s,
-        user: dummyUsers.find((u) => u.id === s.user_id),
-      }))
-      .filter((s) => {
-        if (filterVerified === 'all') return true
-        if (filterVerified === 'verified') return s.is_verified
-        return !s.is_verified
-      })
-  }, [filterVerified])
+    return allSuppliers.filter((s: any) => {
+      if (filterVerified === 'all') return true
+      if (filterVerified === 'verified') return s.is_verified
+      return !s.is_verified
+    })
+  }, [allSuppliers, filterVerified])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -88,7 +92,7 @@ export default function AdminSupplierPage() {
                     <TableCell className="text-sm">{s.jenis_usaha || '-'}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {s.wilayah_operasi.map((w) => (
+                        {s.wilayah_operasi.map((w: string) => (
                           <Badge key={w} variant="outline" className="text-[10px] px-1.5 py-0">
                             {w}
                           </Badge>
@@ -166,7 +170,7 @@ export default function AdminSupplierPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-1 mb-3">
-                  {s.wilayah_operasi.map((w) => (
+                  {s.wilayah_operasi.map((w: string) => (
                     <Badge key={w} variant="outline" className="text-[10px] px-1.5 py-0">
                       <MapPin className="h-2.5 w-2.5 mr-0.5" />
                       {w}

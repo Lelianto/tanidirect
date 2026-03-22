@@ -1,11 +1,10 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { TrustScoreBadge } from '@/components/shared/TrustScoreBadge'
 import { Card, CardContent } from '@/components/ui/card'
-import { dummyKYCSubmissions } from '@/lib/dummy'
 import { useAuthStore } from '@/store'
 import { formatTanggal } from '@/lib/utils/date'
 // DIDIT_DISABLED: akan diaktifkan kembali setelah bug selesai
@@ -17,16 +16,28 @@ const LAYERS = [1, 2, 3] as const
 export default function PoktanKYCPage() {
   const user = useAuthStore((s) => s.user)
 
-  const mySubmissions = useMemo(
-    () => dummyKYCSubmissions.filter((k) => k.user_id === user?.id),
-    [user?.id],
-  )
+  const [mySubmissions, setMySubmissions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!user) return
+    setLoading(true)
+    fetch(`/api/kyc/status?user_id=${user.id}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.submissions) {
+          setMySubmissions(data.submissions)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [user])
 
   // Determine current trust level from highest approved layer
   const currentTrustLevel = useMemo(() => {
-    const approved = mySubmissions.filter((s) => s.status === 'approved')
+    const approved = mySubmissions.filter((s: any) => s.status === 'approved')
     if (approved.length === 0) return 'unverified' as const
-    const highest = approved.sort((a, b) => b.layer - a.layer)[0]
+    const highest = approved.sort((a: any, b: any) => b.layer - a.layer)[0]
     return highest.trust_level
   }, [mySubmissions])
 
@@ -83,7 +94,7 @@ export default function PoktanKYCPage() {
                 {submission ? (
                   <>
                     <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
-                      {submission.documents.map((doc) => (
+                      {submission.documents.map((doc: { id: string; nama: string; status: string }) => (
                         <div key={doc.id} className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5">
                             <FileText className="h-3.5 w-3.5 text-muted-foreground" />

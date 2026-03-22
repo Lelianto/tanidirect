@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatCard } from '@/components/shared/StatCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -16,7 +16,6 @@ import { Separator } from '@/components/ui/separator'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
-import { dummyKredit, dummyUsers } from '@/lib/dummy'
 import { formatRupiah, formatNumber } from '@/lib/utils/currency'
 import { formatTanggal } from '@/lib/utils/date'
 import type { Kredit } from '@/types'
@@ -33,32 +32,36 @@ const AI_KATEGORI_COLOR: Record<string, string> = {
 
 export default function AdminKreditPage() {
   const [activeTab, setActiveTab] = useState('pending')
-  const [selectedKredit, setSelectedKredit] = useState<Kredit | null>(null)
+  const [selectedKredit, setSelectedKredit] = useState<(Kredit & { petani?: any; poktan?: any }) | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [reviewKeputusan, setReviewKeputusan] = useState('')
   const [reviewJumlah, setReviewJumlah] = useState('')
   const [reviewCatatan, setReviewCatatan] = useState('')
 
-  const kreditWithPetani = useMemo(() => {
-    return dummyKredit.map((k) => ({
-      ...k,
-      petani: dummyUsers.find((u) => u.id === k.petani_id),
-    }))
+  const [allKredit, setAllKredit] = useState<any[]>([])
+
+  useEffect(() => {
+    fetch('/api/admin/kredit')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setAllKredit(data.kredit || [])
+      })
+      .catch(() => {})
   }, [])
 
   const filterByTab = (tab: string) => {
-    return kreditWithPetani.filter((k) => {
+    return allKredit.filter((k: any) => {
       if (tab === 'pending') return k.status === 'pending'
       if (tab === 'aktif') return k.status === 'aktif' || k.status === 'disetujui'
       return k.status === 'lunas' || k.status === 'ditolak'
     })
   }
 
-  const totalPengajuan = dummyKredit.reduce((sum, k) => sum + k.jumlah_diajukan, 0)
-  const totalOutstanding = dummyKredit
-    .filter((k) => k.status === 'aktif')
-    .reduce((sum, k) => sum + (k.jumlah_disetujui || 0), 0)
-  const pendingCount = dummyKredit.filter((k) => k.status === 'pending').length
+  const totalPengajuan = allKredit.reduce((sum: number, k: any) => sum + k.jumlah_diajukan, 0)
+  const totalOutstanding = allKredit
+    .filter((k: any) => k.status === 'aktif')
+    .reduce((sum: number, k: any) => sum + (k.jumlah_disetujui || 0), 0)
+  const pendingCount = allKredit.filter((k: any) => k.status === 'pending').length
 
   const handleReview = (kredit: Kredit) => {
     setSelectedKredit(kredit)
@@ -68,7 +71,7 @@ export default function AdminKreditPage() {
     setDialogOpen(true)
   }
 
-  const renderKreditCard = (k: Kredit & { petani?: typeof dummyUsers[0] }) => (
+  const renderKreditCard = (k: Kredit & { petani?: any; poktan?: any }) => (
     <Card key={k.id} className="shadow-sm">
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">

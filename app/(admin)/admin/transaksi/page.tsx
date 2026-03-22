@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatCard } from '@/components/shared/StatCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
-import { dummyTransaksi, dummyPoktan, dummySuppliers } from '@/lib/dummy'
 import { formatRupiah, formatKg, formatNumber } from '@/lib/utils/currency'
 import { formatTanggalSingkat } from '@/lib/utils/date'
 import {
@@ -32,24 +31,28 @@ const KOMODITAS_OPTIONS = ['Semua Komoditas', 'Tomat', 'Cabai Merah', 'Kubis', '
 export default function AdminTransaksiPage() {
   const [filterStatus, setFilterStatus] = useState('Semua Status')
   const [filterKomoditas, setFilterKomoditas] = useState('Semua Komoditas')
+  const [allTransaksi, setAllTransaksi] = useState<any[]>([])
+
+  useEffect(() => {
+    fetch('/api/admin/transaksi')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setAllTransaksi(data.transaksi || [])
+      })
+      .catch(() => {})
+  }, [])
 
   const transaksi = useMemo(() => {
-    return dummyTransaksi
-      .map((t) => ({
-        ...t,
-        poktan: dummyPoktan.find((p) => p.id === t.poktan_id),
-        supplier: dummySuppliers.find((s) => s.id === t.supplier_id),
-      }))
-      .filter((t) => {
-        if (filterStatus !== 'Semua Status' && t.status !== filterStatus) return false
-        if (filterKomoditas !== 'Semua Komoditas' && t.komoditas !== filterKomoditas) return false
-        return true
-      })
-  }, [filterStatus, filterKomoditas])
+    return allTransaksi.filter((t: any) => {
+      if (filterStatus !== 'Semua Status' && t.status !== filterStatus) return false
+      if (filterKomoditas !== 'Semua Komoditas' && t.komoditas !== filterKomoditas) return false
+      return true
+    })
+  }, [allTransaksi, filterStatus, filterKomoditas])
 
-  const totalTransaksi = dummyTransaksi.length
-  const totalVolume = dummyTransaksi.reduce((sum, t) => sum + (t.volume_aktual_kg || t.volume_estimasi_kg), 0)
-  const totalKomisi = dummyTransaksi.reduce((sum, t) => sum + (t.komisi_platform || 0), 0)
+  const totalTransaksi = allTransaksi.length
+  const totalVolume = allTransaksi.reduce((sum: number, t: any) => sum + (t.volume_aktual_kg || t.volume_estimasi_kg), 0)
+  const totalKomisi = allTransaksi.reduce((sum: number, t: any) => sum + (t.komisi_platform || 0), 0)
 
   return (
     <div className="min-h-screen bg-gray-50">

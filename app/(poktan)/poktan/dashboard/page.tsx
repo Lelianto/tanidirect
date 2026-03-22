@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatCard } from '@/components/shared/StatCard'
 import { KomoditasCard } from '@/components/shared/KomoditasCard'
@@ -7,10 +8,6 @@ import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store'
-import {
-  dummyPoktan, dummyTransaksi, dummyPreOrders, dummyNotifikasi,
-  dummyQAInspeksi, getPoktanByKetuaId,
-} from '@/lib/dummy'
 import { formatRupiah } from '@/lib/utils/currency'
 import { timeAgo } from '@/lib/utils/date'
 import {
@@ -22,23 +19,42 @@ import { KYCStatusBanner } from '@/components/kyc/KYCStatusBanner'
 
 export default function PoktanDashboard() {
   const user = useAuthStore((s) => s.user)
-  const poktan = user ? getPoktanByKetuaId(user.id) : dummyPoktan[0]
-  // Demo: use 'pending' as default KYC status. In production, fetch from Supabase.
-  const kycStatus: string = 'pending'
 
-  const transaksiAktif = dummyTransaksi.filter(
-    (t) => t.poktan_id === poktan?.id && !['selesai', 'dibatalkan'].includes(t.status)
-  )
-  const preOrderTersedia = dummyPreOrders.filter(
-    (po) => po.status === 'open' && poktan?.komoditas_utama.includes(po.komoditas)
-  )
-  const notifikasi = dummyNotifikasi
-    .filter((n) => n.user_id === user?.id)
-    .slice(0, 5)
+  const [poktan, setPoktan] = useState<any>(null)
+  const [transaksiAktif, setTransaksiAktif] = useState<any[]>([])
+  const [preOrderTersedia, setPreOrderTersedia] = useState<any[]>([])
+  const [notifikasi, setNotifikasi] = useState<any[]>([])
+  const [totalFeeQA, setTotalFeeQA] = useState(0)
+  const [stats, setStats] = useState<any>({})
+  const [kycStatus, setKycStatus] = useState<string>('pending')
+  const [loading, setLoading] = useState(true)
 
-  const totalFeeQA = dummyQAInspeksi
-    .filter((qa) => qa.poktan_id === poktan?.id)
-    .reduce((sum, qa) => sum + qa.fee_dibayar, 0)
+  useEffect(() => {
+    if (!user) return
+    setLoading(true)
+    fetch(`/api/poktan/dashboard?user_id=${user.id}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.success) {
+          setPoktan(data.poktan)
+          setTransaksiAktif(data.transaksi_aktif || [])
+          setPreOrderTersedia(data.pre_orders_tersedia || [])
+          setNotifikasi(data.notifikasi || [])
+          setTotalFeeQA(data.stats?.total_fee_qa || 0)
+          setStats(data.stats || {})
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+
+    // Fetch KYC status separately
+    fetch(`/api/kyc/status?user_id=${user.id}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.status) setKycStatus(data.status)
+      })
+      .catch(() => {})
+  }, [user])
 
   return (
     <>
@@ -63,12 +79,12 @@ export default function PoktanDashboard() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard
             title="Total Anggota"
-            value={String(poktan?.jumlah_anggota || 0)}
+            value={String(stats.jumlah_anggota || poktan?.jumlah_anggota || 0)}
             icon={<Users className="h-5 w-5" />}
           />
           <StatCard
             title="Transaksi Aktif"
-            value={String(transaksiAktif.length)}
+            value={String(stats.transaksi_aktif || transaksiAktif.length)}
             icon={<ShoppingCart className="h-5 w-5" />}
             trend="up"
             trendValue="+2"
@@ -80,7 +96,7 @@ export default function PoktanDashboard() {
           />
           <StatCard
             title="Rating QA"
-            value={`${poktan?.skor_qa || 0}/100`}
+            value={`${stats.skor_qa || poktan?.skor_qa || 0}/100`}
             icon={<Star className="h-5 w-5" />}
             trend="up"
             trendValue="+2.5"

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -13,7 +13,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
   DialogDescription, DialogFooter,
 } from '@/components/ui/dialog'
-import { dummyLogistik, dummyTransaksi } from '@/lib/dummy'
+import { useAuthStore } from '@/store'
 import { formatRupiah } from '@/lib/utils/currency'
 import { formatWaktu, timeAgo } from '@/lib/utils/date'
 import {
@@ -45,10 +45,27 @@ function getStepLabel(step: string): string {
 }
 
 export default function LogistikPage() {
+  const user = useAuthStore((s) => s.user)
+  const [logistikData, setLogistikData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false)
   const [selectedShipment, setSelectedShipment] = useState<Logistik | null>(null)
   const [posisiUpdate, setPosisiUpdate] = useState('')
+
+  useEffect(() => {
+    if (!user) return
+    setLoading(true)
+    fetch(`/api/poktan/logistik?user_id=${user.id}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.success) {
+          setLogistikData(data.logistik || [])
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [user])
 
   function toggleExpand(id: string) {
     setExpandedId(expandedId === id ? null : id)
@@ -65,8 +82,8 @@ export default function LogistikPage() {
     setSelectedShipment(null)
   }
 
-  function getTransaksiInfo(transaksiId: string) {
-    return dummyTransaksi.find((t) => t.id === transaksiId)
+  function getTransaksiInfo(shipment: any) {
+    return shipment.transaksi || null
   }
 
   return (
@@ -76,20 +93,20 @@ export default function LogistikPage() {
         {/* Header info */}
         <div>
           <p className="text-sm text-muted-foreground">
-            {dummyLogistik.length} pengiriman aktif
+            {logistikData.length} pengiriman aktif
           </p>
         </div>
 
         {/* Shipment List */}
         <div className="space-y-4">
-          {dummyLogistik.length === 0 ? (
+          {logistikData.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
               Tidak ada pengiriman aktif
             </p>
           ) : (
-            dummyLogistik.map((shipment) => {
-              const tx = getTransaksiInfo(shipment.transaksi_id)
-              const tierConfig = TIER_CONFIG[shipment.tier]
+            logistikData.map((shipment) => {
+              const tx = getTransaksiInfo(shipment)
+              const tierConfig = TIER_CONFIG[shipment.tier as TierLogistik]
               const stepIndex = getStepIndex(shipment.status)
               const isExpanded = expandedId === shipment.id
 

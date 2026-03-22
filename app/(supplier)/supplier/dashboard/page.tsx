@@ -6,17 +6,13 @@ import { KomoditasCard } from '@/components/shared/KomoditasCard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store'
-import {
-  getSupplierByUserId, getPreOrdersBySupplierId,
-  dummyTransaksi, dummyPrediksiHarga, dummyHargaHistoris,
-} from '@/lib/dummy'
 import { formatRupiah } from '@/lib/utils/currency'
 import {
   ShoppingCart, TrendingUp, Wallet, Star,
   Plus, CheckCircle, FileText, ChevronRight, ArrowUp, ArrowDown, Minus,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { KYCStatusBanner } from '@/components/kyc/KYCStatusBanner'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -25,12 +21,69 @@ import {
 
 export default function SupplierDashboard() {
   const user = useAuthStore((s) => s.user)
-  const supplier = user ? getSupplierByUserId(user.id) : null
-  const preOrders = supplier ? getPreOrdersBySupplierId(supplier.id) : []
-  const transaksiSupplier = dummyTransaksi.filter((t) => t.supplier_id === supplier?.id)
+  const [supplier, setSupplier] = useState<any>(null)
+  const [preOrders, setPreOrders] = useState<any[]>([])
+  const [transaksiSupplier, setTransaksiSupplier] = useState<any[]>([])
+  const [prediksi, setPrediksi] = useState<any>(null)
+  const [kycStatus, setKycStatus] = useState<string>('pending')
+
+  useEffect(() => {
+    if (!user?.id) return
+    async function fetchDashboard() {
+      try {
+        const res = await fetch(`/api/supplier/dashboard?user_id=${user!.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success) {
+            setSupplier(data.supplier || null)
+            setPreOrders(data.pre_orders || [])
+            setTransaksiSupplier(data.transaksi || [])
+          }
+        }
+      } catch {
+        // fallback to empty
+      }
+    }
+    fetchDashboard()
+  }, [user?.id])
+
+  useEffect(() => {
+    if (!supplier?.id) return
+    async function fetchHarga() {
+      try {
+        const res = await fetch(`/api/supplier/harga?supplier_id=${supplier.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success && data.prediksi?.length > 0) {
+            setPrediksi(data.prediksi[0])
+          }
+        }
+      } catch {
+        // fallback
+      }
+    }
+    fetchHarga()
+  }, [supplier?.id])
+
+  useEffect(() => {
+    if (!user?.id) return
+    async function fetchKyc() {
+      try {
+        const res = await fetch(`/api/kyc/status?user_id=${user!.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.status) setKycStatus(data.status)
+        }
+      } catch {
+        // fallback
+      }
+    }
+    fetchKyc()
+  }, [user?.id])
+
   const transaksiSelesai = transaksiSupplier.filter((t) => t.status === 'selesai')
   const nilaiTransaksiBulan = transaksiSelesai.reduce((sum, t) => sum + (t.total_nilai || 0), 0)
-  const preOrderAktif = preOrders.filter((po) => !['fulfilled', 'cancelled'].includes(po.status))
+  const preOrderAktif = preOrders.filter((po: any) => !['fulfilled', 'cancelled'].includes(po.status))
 
   // Chart data for volume 6 bulan
   const chartData = useMemo(() => {
@@ -42,16 +95,11 @@ export default function SupplierDashboard() {
     }))
   }, [])
 
-  // Prediksi harga
-  const prediksi = dummyPrediksiHarga[0]
   const trendIcon = prediksi?.tren === 'naik'
     ? <ArrowUp className="h-4 w-4 text-tani-red" />
     : prediksi?.tren === 'turun'
     ? <ArrowDown className="h-4 w-4 text-tani-green" />
     : <Minus className="h-4 w-4 text-muted-foreground" />
-
-  // Demo: use 'pending' as default KYC status. In production, fetch from Supabase.
-  const kycStatus: string = 'pending'
 
   return (
     <>
@@ -185,7 +233,7 @@ export default function SupplierDashboard() {
                   <div>
                     <p className="text-[11px] text-muted-foreground mb-1">Faktor Penentu:</p>
                     <div className="flex flex-wrap gap-1">
-                      {prediksi.faktor_penentu.map((f, i) => (
+                      {prediksi.faktor_penentu.map((f: string, i: number) => (
                         <span key={i} className="text-[11px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">
                           {f}
                         </span>

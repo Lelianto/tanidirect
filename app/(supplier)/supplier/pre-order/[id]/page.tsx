@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -14,10 +14,6 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
   DialogDescription, DialogFooter,
 } from '@/components/ui/dialog'
-import {
-  dummyPreOrders, dummyPoktan, dummyTransaksi,
-  dummyQAInspeksi, dummyLogistik,
-} from '@/lib/dummy'
 import { getQAForm } from '@/lib/data/qa-forms'
 import { formatRupiah, formatKg } from '@/lib/utils/currency'
 import { formatTanggal, formatWaktu, timeAgo } from '@/lib/utils/date'
@@ -51,28 +47,54 @@ export default function PreOrderDetailPage() {
   const router = useRouter()
   const id = params.id as string
 
-  const preOrder = dummyPreOrders.find((po) => po.id === id)
-  const poktan = preOrder?.poktan_matched_id
-    ? dummyPoktan.find((p) => p.id === preOrder.poktan_matched_id)
-    : null
-  const transaksi = preOrder
-    ? dummyTransaksi.find((t) => t.pre_order_id === preOrder.id)
-    : null
-  const qaInspeksi = transaksi
-    ? dummyQAInspeksi.filter((qa) => qa.transaksi_id === transaksi.id)
-    : []
-  const logistik = transaksi
-    ? dummyLogistik.filter((lg) => lg.transaksi_id === transaksi.id)
-    : []
+  const [preOrder, setPreOrder] = useState<any>(null)
+  const [poktan, setPoktan] = useState<any>(null)
+  const [transaksi, setTransaksi] = useState<any>(null)
+  const [qaInspeksi, setQaInspeksi] = useState<any[]>([])
+  const [logistik, setLogistik] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!id) return
+    async function fetchDetail() {
+      try {
+        const res = await fetch(`/api/supplier/pre-order/${id}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success) {
+            const po = data.pre_order
+            setPreOrder(po)
+            setPoktan(po?.poktan || null)
+            setTransaksi(po?.transaksi || null)
+            setQaInspeksi(po?.qa_inspeksi || [])
+            setLogistik(po?.logistik || [])
+          }
+        }
+      } catch {
+        // fallback
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchDetail()
+  }, [id])
 
   const currentStep = preOrder ? STATUS_ORDER[preOrder.status] ?? -1 : 0
   const qaForm = preOrder ? getQAForm(preOrder.komoditas) : null
 
   // Catatan kualitas state
-  const [catatanKualitas, setCatatanKualitas] = useState(preOrder?.catatan_kualitas_supplier || '')
-  const [aiSteps, setAiSteps] = useState<SupplierQAStep[]>(preOrder?.ai_qa_steps || [])
+  const [catatanKualitas, setCatatanKualitas] = useState('')
+  const [aiSteps, setAiSteps] = useState<SupplierQAStep[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
-  const [isSaved, setIsSaved] = useState(!!preOrder?.catatan_kualitas_supplier)
+  const [isSaved, setIsSaved] = useState(false)
+
+  useEffect(() => {
+    if (preOrder) {
+      setCatatanKualitas(preOrder.catatan_kualitas_supplier || '')
+      setAiSteps(preOrder.ai_qa_steps || [])
+      setIsSaved(!!preOrder.catatan_kualitas_supplier)
+    }
+  }, [preOrder])
 
   // QA form viewer
   const [qaFormOpen, setQaFormOpen] = useState(false)
@@ -111,6 +133,17 @@ export default function PreOrderDetailPage() {
     } finally {
       setIsGenerating(false)
     }
+  }
+
+  if (loading) {
+    return (
+      <>
+        <TopBar title="Detail Pre-Order" />
+        <div className="p-4 flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </>
+    )
   }
 
   if (!preOrder) {

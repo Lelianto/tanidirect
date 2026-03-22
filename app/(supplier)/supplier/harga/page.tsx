@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { dummyPrediksiHarga, dummyHargaHistoris } from '@/lib/dummy'
 import { formatRupiah } from '@/lib/utils/currency'
 import { KOMODITAS } from '@/lib/constants/komoditas'
 import { PROVINSI } from '@/lib/constants/wilayah'
@@ -29,20 +28,39 @@ export default function SupplierHargaPage() {
   const [komoditas, setKomoditas] = useState('Cabai Merah')
   const [wilayah, setWilayah] = useState('Jawa Barat')
   const [hasAnalyzed, setHasAnalyzed] = useState(true)
+  const [hargaHistoris, setHargaHistoris] = useState<any[]>([])
+  const [prediksiList, setPrediksiList] = useState<any[]>([])
 
-  // Use the first prediction as default
-  const prediksi = dummyPrediksiHarga[0]
+  useEffect(() => {
+    async function fetchHarga() {
+      try {
+        const res = await fetch('/api/supplier/harga')
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success) {
+            setHargaHistoris(data.historis || [])
+            setPrediksiList(data.prediksi || [])
+          }
+        }
+      } catch {
+        // fallback to empty
+      }
+    }
+    fetchHarga()
+  }, [])
+
+  const prediksi = prediksiList.length > 0 ? prediksiList[0] : null
 
   const chartData = useMemo(() => {
-    return dummyHargaHistoris
-      .filter((h) => h.komoditas === komoditas)
-      .sort((a, b) => new Date(a.minggu).getTime() - new Date(b.minggu).getTime())
-      .map((h) => ({
+    return hargaHistoris
+      .filter((h: any) => h.komoditas === komoditas)
+      .sort((a: any, b: any) => new Date(a.minggu).getTime() - new Date(b.minggu).getTime())
+      .map((h: any) => ({
         minggu: new Date(h.minggu).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
         harga: h.harga_per_kg,
         volume: h.volume_total_kg,
       }))
-  }, [komoditas])
+  }, [komoditas, hargaHistoris])
 
   const avgHarga = chartData.length > 0
     ? Math.round(chartData.reduce((sum, d) => sum + d.harga, 0) / chartData.length)
@@ -236,7 +254,7 @@ export default function SupplierHargaPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
-                    {prediksi.faktor_penentu.map((f, i) => (
+                    {prediksi.faktor_penentu.map((f: string, i: number) => (
                       <Badge
                         key={i}
                         variant="secondary"

@@ -19,7 +19,9 @@ import {
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import { Upload } from 'lucide-react'
+import { Upload, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/store'
 
 interface DisputeFileDialogProps {
   transaksiId: string
@@ -36,16 +38,43 @@ const DISPUTE_CATEGORIES = [
 ]
 
 export function DisputeFileDialog({ transaksiId, open, onOpenChange }: DisputeFileDialogProps) {
+  const user = useAuthStore((s) => s.user)
   const [kategori, setKategori] = useState('')
   const [deskripsi, setDeskripsi] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
-  const canSubmit = kategori !== '' && deskripsi.trim() !== ''
+  const canSubmit = kategori !== '' && deskripsi.trim() !== '' && !submitting
 
-  function handleSubmit() {
-    // dummy submit — just close
-    setKategori('')
-    setDeskripsi('')
-    onOpenChange(false)
+  async function handleSubmit() {
+    if (!user) return
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/dispute/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transaksi_id: transaksiId,
+          pelapor_id: user.id,
+          kategori,
+          deskripsi,
+        }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Gagal mengajukan sengketa')
+      }
+
+      const data = await res.json()
+      toast.success(`Sengketa berhasil diajukan. SLA: ${new Date(data.sla_deadline).toLocaleDateString('id-ID')}`)
+      setKategori('')
+      setDeskripsi('')
+      onOpenChange(false)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -104,6 +133,7 @@ export function DisputeFileDialog({ transaksiId, open, onOpenChange }: DisputeFi
             Batal
           </Button>
           <Button disabled={!canSubmit} onClick={handleSubmit}>
+            {submitting && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
             Kirim Sengketa
           </Button>
         </DialogFooter>

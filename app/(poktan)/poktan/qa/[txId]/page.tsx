@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, use } from 'react'
+import { useState, useEffect, useCallback, useMemo, use, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,10 +10,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { useAuthStore } from '@/store'
-import {
-  dummyTransaksi, dummySuppliers, dummyPoktan,
-  getPoktanByKetuaId,
-} from '@/lib/dummy'
 import { formatRupiah, formatKg } from '@/lib/utils/currency'
 import { GRADE_COLORS } from '@/lib/constants/komoditas'
 import {
@@ -21,20 +17,56 @@ import {
 } from '@/lib/data/qa-forms'
 import type { QADraft, QAFormSection } from '@/lib/data/qa-forms'
 import { computeAutoGrade } from '@/lib/qa/auto-grade'
+import { toast } from 'sonner'
 import {
   ArrowLeft, ChevronDown, ChevronRight, CheckCircle, XCircle,
-  Save, Send, FileText, Clock, Camera, Info, AlertTriangle, ShieldCheck, ShieldX,
+  Save, Send, FileText, Clock, Camera, Info, AlertTriangle, ShieldCheck, ShieldX, Loader2,
 } from 'lucide-react'
 
 export default function InspeksiPage({ params }: { params: Promise<{ txId: string }> }) {
   const { txId } = use(params)
   const router = useRouter()
   const user = useAuthStore((s) => s.user)
-  const poktan = user ? getPoktanByKetuaId(user.id) : dummyPoktan[0]
 
-  const tx = dummyTransaksi.find((t) => t.id === txId)
-  const supplier = tx ? dummySuppliers.find((s) => s.id === tx.supplier_id) : null
-  const form = tx ? getQAForm(tx.komoditas) : null
+  const [poktan, setPoktan] = useState<any>(null)
+  const [tx, setTx] = useState<any>(null)
+  const [supplier, setSupplier] = useState<any>(null)
+  const [form, setForm] = useState<ReturnType<typeof getQAForm> | null>(null)
+  const [dataLoading, setDataLoading] = useState(true)
+
+  // Step 1: Fetch poktan from dashboard API
+  useEffect(() => {
+    if (!user) return
+    setDataLoading(true)
+    fetch(`/api/poktan/dashboard?user_id=${user.id}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.success && data.poktan) {
+          setPoktan(data.poktan)
+        }
+      })
+      .catch(() => {})
+  }, [user])
+
+  // Step 2: Fetch QA transactions once poktan is loaded, find the specific tx
+  useEffect(() => {
+    if (!poktan?.id) return
+    fetch(`/api/poktan/qa?poktan_id=${poktan.id}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.success) {
+          const transactions = data.transactions || []
+          const found = transactions.find((t: any) => t.id === txId)
+          if (found) {
+            setTx(found)
+            setSupplier(found.supplier || null)
+            setForm(getQAForm(found.komoditas))
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => setDataLoading(false))
+  }, [poktan?.id, txId])
 
   // Form state
   const [volumeSampel, setVolumeSampel] = useState('')
@@ -52,6 +84,7 @@ export default function InspeksiPage({ params }: { params: Promise<{ txId: strin
   const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null)
   const [showCatatanFor, setShowCatatanFor] = useState<Set<number>>(new Set())
   const [gradeOverrideReason, setGradeOverrideReason] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   // Auto-grade recommendation
   const autoGradeResult = useMemo(() => {
@@ -215,11 +248,48 @@ export default function InspeksiPage({ params }: { params: Promise<{ txId: strin
     return filled === total && !!gradePilihan && !!volumeSampel && allFotosUploaded && hasOverrideReason
   }
 
-  function handleSubmit() {
-    doSaveDraft()
-    deleteDraft(txId)
-    // Status becomes 'perlu_tinjauan' — awaiting supplier review
-    router.push('/poktan/qa')
+  async function handleSubmit() {
+    if (!tx || !form || !poktan || !user) return
+    setSubmitting(true)
+    try {
+      const formDataPayload = new FormData()
+      formDataPayload.append('transaksi_id', tx.id)
+      formDataPayload.append('poktan_id', poktan.id)
+      formDataPayload.append('inspektor_id', user.id)
+      formDataPayload.append('komoditas', tx.komoditas)
+      formDataPayload.append('volume_inspeksi_kg', volumeSampel)
+      formDataPayload.append('grade_hasil', gradePilihan)
+      formDataPayload.append('skor_kualitas', String(computeScore()))
+      formDataPayload.append('hasil_aktual', JSON.stringify(results))
+      formDataPayload.append('catatan_inspektor', catatanTambahan)
+      if (autoGradeResult?.grade) {
+        formDataPayload.append('grade_rekomendasi_sistem', autoGradeResult.grade)
+      }
+      if (isOverride && gradeOverrideReason) {
+        formDataPayload.append('grade_override_reason', gradeOverrideReason)
+      }
+      if (fotoFiles.batch) formDataPayload.append('foto_batch', fotoFiles.batch)
+      if (fotoFiles.detail) formDataPayload.append('foto_detail', fotoFiles.detail)
+      if (fotoFiles.timbangan) formDataPayload.append('foto_timbangan', fotoFiles.timbangan)
+
+      const res = await fetch('/api/poktan/qa', {
+        method: 'POST',
+        body: formDataPayload,
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Gagal submit inspeksi QA')
+      }
+
+      deleteDraft(txId)
+      toast.success('Inspeksi QA berhasil disubmit! Menunggu review supplier.')
+      router.push('/poktan/qa')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   if (!tx || !form) {
@@ -708,11 +778,11 @@ export default function InspeksiPage({ params }: { params: Promise<{ txId: strin
           </Button>
           <Button
             className="flex-1 bg-tani-green hover:bg-tani-green/90 text-white"
-            disabled={!canSubmit()}
+            disabled={!canSubmit() || submitting}
             onClick={handleSubmit}
           >
-            <Send className="h-4 w-4 mr-1" />
-            Submit Inspeksi
+            {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}
+            {submitting ? 'Mengirim...' : 'Submit Inspeksi'}
           </Button>
         </div>
       </div>

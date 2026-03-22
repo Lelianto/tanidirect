@@ -1,31 +1,62 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { useAuthStore } from '@/store'
-import {
-  dummyQAInspeksi, dummyTransaksi, dummyPoktan,
-  getSupplierByUserId,
-} from '@/lib/dummy'
 import { formatKg } from '@/lib/utils/currency'
+import { toast } from 'sonner'
 import {
   ClipboardCheck, CheckCircle, XCircle, AlertTriangle,
-  Clock, MessageSquare, ShieldCheck, ShieldX,
+  Clock, MessageSquare, ShieldCheck, ShieldX, Loader2,
 } from 'lucide-react'
 
 type Tab = 'review' | 'riwayat'
 
 export default function SupplierQAReviewPage() {
   const user = useAuthStore((s) => s.user)
-  const supplier = user ? getSupplierByUserId(user.id) : null
+  const [supplier, setSupplier] = useState<any>(null)
+  const [allQA, setAllQA] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<Tab>('review')
   const [disputeFor, setDisputeFor] = useState<string | null>(null)
   const [disputeReason, setDisputeReason] = useState('')
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set())
   const [reviewActions, setReviewActions] = useState<Record<string, { action: 'approved' | 'disputed'; catatan?: string }>>({})
+  const [submittingId, setSubmittingId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!user?.id) return
+    async function fetchSupplier() {
+      try {
+        const res = await fetch(`/api/supplier/dashboard?user_id=${user!.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success) setSupplier(data.supplier || null)
+        }
+      } catch {
+        // fallback
+      }
+    }
+    fetchSupplier()
+  }, [user?.id])
+
+  useEffect(() => {
+    if (!supplier?.id) return
+    async function fetchQA() {
+      try {
+        const res = await fetch(`/api/supplier/qa?supplier_id=${supplier.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success) setAllQA(data.inspections || [])
+        }
+      } catch {
+        // fallback
+      }
+    }
+    fetchQA()
+  }, [supplier?.id])
 
   if (!supplier) {
     return (
@@ -35,38 +66,77 @@ export default function SupplierQAReviewPage() {
     )
   }
 
-  // Get QA inspections linked to this supplier's transactions
-  const supplierTxIds = dummyTransaksi
-    .filter((t) => t.supplier_id === supplier.id)
-    .map((t) => t.id)
-
-  const allQA = dummyQAInspeksi.filter((qa) => supplierTxIds.includes(qa.transaksi_id))
   const pendingReview = allQA.filter(
-    (qa) => qa.status === 'perlu_tinjauan' && qa.supplier_review_status === 'pending' && !reviewedIds.has(qa.id)
+    (qa: any) => qa.status === 'perlu_tinjauan' && qa.supplier_review_status === 'pending' && !reviewedIds.has(qa.id)
   )
   const riwayat = [
-    ...allQA.filter((qa) => qa.supplier_review_status !== 'pending' || reviewedIds.has(qa.id)),
+    ...allQA.filter((qa: any) => qa.supplier_review_status !== 'pending' || reviewedIds.has(qa.id)),
   ]
 
-  function handleApprove(qaId: string) {
-    setReviewedIds((prev) => new Set([...prev, qaId]))
-    setReviewActions((prev) => ({ ...prev, [qaId]: { action: 'approved' } }))
+  async function handleApprove(qaId: string) {
+    if (!supplier) return
+    setSubmittingId(qaId)
+    try {
+      const res = await fetch('/api/supplier/qa-review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          qa_id: qaId,
+          action: 'approved',
+          supplier_id: supplier.id,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Gagal menyetujui QA')
+      }
+      setReviewedIds((prev) => new Set([...prev, qaId]))
+      setReviewActions((prev) => ({ ...prev, [qaId]: { action: 'approved' } }))
+      toast.success('Inspeksi QA disetujui')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan')
+    } finally {
+      setSubmittingId(null)
+    }
   }
 
-  function handleDispute(qaId: string) {
-    if (!disputeReason.trim()) return
-    setReviewedIds((prev) => new Set([...prev, qaId]))
-    setReviewActions((prev) => ({ ...prev, [qaId]: { action: 'disputed', catatan: disputeReason } }))
-    setDisputeFor(null)
-    setDisputeReason('')
+  async function handleDispute(qaId: string) {
+    if (!disputeReason.trim() || !supplier) return
+    setSubmittingId(qaId)
+    try {
+      const res = await fetch('/api/supplier/qa-review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          qa_id: qaId,
+          action: 'disputed',
+          catatan: disputeReason,
+          supplier_id: supplier.id,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Gagal mengirim dispute')
+      }
+      setReviewedIds((prev) => new Set([...prev, qaId]))
+      setReviewActions((prev) => ({ ...prev, [qaId]: { action: 'disputed', catatan: disputeReason } }))
+      setDisputeFor(null)
+      setDisputeReason('')
+      toast.success('Dispute berhasil dikirim')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan')
+    } finally {
+      setSubmittingId(null)
+    }
   }
 
   function getTransaction(txId: string) {
-    return dummyTransaksi.find((t) => t.id === txId)
+    return allQA.find((qa: any) => qa.transaksi_id === txId)?.transaksi || null
   }
 
   function getPoktan(poktanId: string) {
-    return dummyPoktan.find((p) => p.id === poktanId)
+    const qa = allQA.find((q: any) => q.poktan_id === poktanId)
+    return qa?.poktan || null
   }
 
   return (
@@ -191,7 +261,7 @@ export default function SupplierQAReviewPage() {
                         <div>
                           <p className="text-[10px] text-muted-foreground mb-1">Dokumentasi Foto ({qa.foto_urls.length})</p>
                           <div className="flex gap-2">
-                            {qa.foto_urls.map((url, i) => (
+                            {qa.foto_urls.map((url: string, i: number) => (
                               <div key={i} className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center text-[10px] text-muted-foreground">
                                 Foto {i + 1}
                               </div>
@@ -206,14 +276,16 @@ export default function SupplierQAReviewPage() {
                           <Button
                             className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
                             onClick={() => handleApprove(qa.id)}
+                            disabled={submittingId === qa.id}
                           >
-                            <CheckCircle className="h-4 w-4 mr-1" />
+                            {submittingId === qa.id ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
                             Terima
                           </Button>
                           <Button
                             variant="outline"
                             className="flex-1 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
                             onClick={() => setDisputeFor(qa.id)}
+                            disabled={submittingId === qa.id}
                           >
                             <XCircle className="h-4 w-4 mr-1" />
                             Dispute
@@ -242,9 +314,10 @@ export default function SupplierQAReviewPage() {
                             </Button>
                             <Button
                               className="flex-1 bg-red-600 hover:bg-red-700 text-white"
-                              disabled={!disputeReason.trim()}
+                              disabled={!disputeReason.trim() || submittingId === qa.id}
                               onClick={() => handleDispute(qa.id)}
                             >
+                              {submittingId === qa.id && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
                               Kirim Dispute
                             </Button>
                           </div>

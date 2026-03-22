@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatCard } from '@/components/shared/StatCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -18,9 +18,6 @@ import {
   Table, TableHeader, TableBody, TableHead, TableRow, TableCell,
 } from '@/components/ui/table'
 import { useAuthStore } from '@/store'
-import {
-  dummyPoktan, getPoktanByKetuaId, getAnggotaByPoktanId,
-} from '@/lib/dummy'
 import { Users, Sprout, Map, UserPlus, Search, Phone } from 'lucide-react'
 
 function getInitials(name: string) {
@@ -34,8 +31,25 @@ function getInitials(name: string) {
 
 export default function AnggotaPoktanPage() {
   const user = useAuthStore((s) => s.user)
-  const poktan = user ? getPoktanByKetuaId(user.id) : dummyPoktan[0]
-  const anggota = poktan ? getAnggotaByPoktanId(poktan.id) : []
+
+  const [poktan, setPoktan] = useState<any>(null)
+  const [anggota, setAnggota] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!user) return
+    setLoading(true)
+    fetch(`/api/poktan/anggota?user_id=${user.id}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.success) {
+          setPoktan(data.poktan)
+          setAnggota(data.anggota || [])
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [user])
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [searchHp, setSearchHp] = useState('')
@@ -157,7 +171,7 @@ export default function AnggotaPoktanPage() {
                         <StatusBadge status={a.status} />
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        {a.komoditas.map((k) => (
+                        {a.komoditas.map((k: string) => (
                           <Badge
                             key={k}
                             variant="secondary"
@@ -212,7 +226,7 @@ export default function AnggotaPoktanPage() {
                     <TableCell>{a.lahan_ha ?? '-'}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {a.komoditas.map((k) => (
+                        {a.komoditas.map((k: string) => (
                           <Badge
                             key={k}
                             variant="secondary"

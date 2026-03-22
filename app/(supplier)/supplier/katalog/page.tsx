@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { dummyKatalogKomoditas } from '@/lib/dummy'
 import { formatRupiah, formatKg } from '@/lib/utils/currency'
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
@@ -83,22 +82,40 @@ function KomoditasKatalogCard({ item }: { item: KatalogKomoditas }) {
 }
 
 export default function SupplierKatalogPage() {
+  const [katalogData, setKatalogData] = useState<import('@/types').KatalogKomoditas[]>([])
   const [komoditas, setKomoditas] = useState('Semua')
   const [wilayah, setWilayah] = useState('Semua')
   const [volumeMin, setVolumeMin] = useState('Semua')
   const [jadwal, setJadwal] = useState('Semua')
 
+  useEffect(() => {
+    async function fetchKatalog() {
+      try {
+        const res = await fetch('/api/supplier/katalog')
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success) {
+            setKatalogData(data.katalog || [])
+          }
+        }
+      } catch {
+        // fallback to empty
+      }
+    }
+    fetchKatalog()
+  }, [])
+
   const uniqueKomoditas = useMemo(
-    () => [...new Set(dummyKatalogKomoditas.map((k) => k.nama))],
-    [],
+    () => [...new Set(katalogData.map((k) => k.nama))],
+    [katalogData],
   )
   const uniqueWilayah = useMemo(
-    () => [...new Set(dummyKatalogKomoditas.map((k) => k.wilayah))],
-    [],
+    () => [...new Set(katalogData.map((k) => k.wilayah))],
+    [katalogData],
   )
 
   const filtered = useMemo(() => {
-    return dummyKatalogKomoditas.filter((k) => {
+    return katalogData.filter((k) => {
       if (komoditas !== 'Semua' && k.nama !== komoditas) return false
       if (wilayah !== 'Semua' && k.wilayah !== wilayah) return false
       if (volumeMin !== 'Semua' && k.volume_tersedia_kg < Number(volumeMin)) return false

@@ -1,10 +1,10 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Bell, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useAuthStore } from '@/store'
-import { dummyNotifikasi } from '@/lib/dummy'
 
 interface TopBarProps {
   title: string
@@ -13,9 +13,19 @@ interface TopBarProps {
 
 export function TopBar({ title, onMenuClick }: TopBarProps) {
   const user = useAuthStore((s) => s.user)
-  const unreadCount = user
-    ? dummyNotifikasi.filter((n) => n.user_id === user.id && !n.is_read).length
-    : 0
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    if (!user) return
+    fetch(`/api/notif?user_id=${user.id}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.notifikasi) {
+          setUnreadCount(data.notifikasi.filter((n: { is_read: boolean }) => !n.is_read).length)
+        }
+      })
+      .catch(() => {})
+  }, [user])
 
   const initials = user?.nama_lengkap
     .split(' ')

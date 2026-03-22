@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { StatCard } from '@/components/shared/StatCard'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { dummyOnboardingMilestones, dummyOnboardingChecklist } from '@/lib/dummy'
 import { formatRupiah } from '@/lib/utils/currency'
 import {
   Rocket, Target, CheckSquare, Wallet,
@@ -15,6 +14,20 @@ import {
 
 export default function AdminOnboardingPage() {
   const [activeTab, setActiveTab] = useState('1')
+  const [allMilestones, setAllMilestones] = useState<any[]>([])
+  const [allChecklist, setAllChecklist] = useState<any[]>([])
+
+  useEffect(() => {
+    fetch('/api/admin/onboarding')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setAllMilestones(data.milestones || [])
+          setAllChecklist(data.checklist || [])
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const phaseConfig = [
     { phase: 1, label: 'Fase 1 Seeded (Hari 1-30)', budget: 150000000, budgetLabel: 'Allocated' },
@@ -23,21 +36,21 @@ export default function AdminOnboardingPage() {
   ]
 
   const milestonesByPhase = (phase: number) =>
-    dummyOnboardingMilestones.filter((m) => m.phase === phase)
+    allMilestones.filter((m: any) => m.phase === phase)
 
   const checklistByKategori = useMemo(() => {
-    const grouped: Record<string, typeof dummyOnboardingChecklist> = {}
-    dummyOnboardingChecklist.forEach((item) => {
+    const grouped: Record<string, any[]> = {}
+    allChecklist.forEach((item: any) => {
       if (!grouped[item.kategori]) grouped[item.kategori] = []
       grouped[item.kategori].push(item)
     })
     return grouped
-  }, [])
+  }, [allChecklist])
 
-  const totalMilestones = dummyOnboardingMilestones.length
-  const tercapai = dummyOnboardingMilestones.filter((m) => m.status === 'tercapai').length
-  const inProgress = dummyOnboardingMilestones.filter((m) => m.status === 'in_progress').length
-  const checklistDone = dummyOnboardingChecklist.filter((c) => c.is_done).length
+  const totalMilestones = allMilestones.length
+  const tercapai = allMilestones.filter((m: any) => m.status === 'tercapai').length
+  const inProgress = allMilestones.filter((m: any) => m.status === 'in_progress').length
+  const checklistDone = allChecklist.filter((c: any) => c.is_done).length
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -63,7 +76,7 @@ export default function AdminOnboardingPage() {
           />
           <StatCard
             title="Checklist Selesai"
-            value={`${checklistDone}/${dummyOnboardingChecklist.length}`}
+            value={`${checklistDone}/${allChecklist.length}`}
             icon={<CheckSquare className="h-5 w-5" />}
           />
         </div>

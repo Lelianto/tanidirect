@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -12,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
-import { dummyAnomali, dummyPoktan } from '@/lib/dummy'
 import { formatTanggal } from '@/lib/utils/date'
 import type { AnomaliLog } from '@/types'
 import {
@@ -26,11 +25,15 @@ export default function AdminCompliancePage() {
   const [catatan, setCatatan] = useState('')
   const [keputusan, setKeputusan] = useState('')
 
-  const anomaliWithPoktan = useMemo(() => {
-    return dummyAnomali.map((a) => ({
-      ...a,
-      poktan: dummyPoktan.find((p) => p.id === a.poktan_id),
-    }))
+  const [anomaliWithPoktan, setAnomaliWithPoktan] = useState<(AnomaliLog & { poktan?: any })[]>([])
+
+  useEffect(() => {
+    fetch('/api/admin/compliance')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setAnomaliWithPoktan(data.anomali || [])
+      })
+      .catch(() => {})
   }, [])
 
   const filterByTab = (tab: string) => {
@@ -61,7 +64,7 @@ export default function AdminCompliancePage() {
     }
   }
 
-  const renderAnomaliCard = (a: AnomaliLog & { poktan?: typeof dummyPoktan[0] }) => (
+  const renderAnomaliCard = (a: AnomaliLog & { poktan?: any }) => (
     <Card key={a.id} className="shadow-sm">
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-2">

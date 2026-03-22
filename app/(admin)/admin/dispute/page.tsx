@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { StatCard } from '@/components/shared/StatCard'
@@ -14,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
-import { dummyDisputes } from '@/lib/dummy'
 import { formatTanggal } from '@/lib/utils/date'
 import { formatRupiah } from '@/lib/utils/currency'
 import type { Dispute } from '@/types'
@@ -29,21 +28,31 @@ export default function AdminDisputePage() {
   const [resolusi, setResolusi] = useState('')
   const [keputusan, setKeputusan] = useState('')
   const [kompensasi, setKompensasi] = useState(0)
+  const [allDisputes, setAllDisputes] = useState<Dispute[]>([])
+
+  useEffect(() => {
+    fetch('/api/admin/disputes')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setAllDisputes(data.disputes || [])
+      })
+      .catch(() => {})
+  }, [])
 
   const filterByTab = (tab: string) => {
-    return dummyDisputes.filter((d) => d.status === tab)
+    return allDisputes.filter((d) => d.status === tab)
   }
 
-  const aktifCount = dummyDisputes.filter((d) => d.status !== 'selesai').length
-  const slaCount = dummyDisputes.filter((d) => {
+  const aktifCount = allDisputes.filter((d) => d.status !== 'selesai').length
+  const slaCount = allDisputes.filter((d) => {
     if (d.status === 'selesai') return false
     const deadline = new Date(d.sla_deadline)
     const now = new Date()
     const diff = deadline.getTime() - now.getTime()
     return diff > 0 && diff < 24 * 60 * 60 * 1000
   }).length
-  const eskalasi = dummyDisputes.filter((d) => d.status === 'eskalasi').length
-  const selesaiBulanIni = dummyDisputes.filter((d) => d.status === 'selesai').length
+  const eskalasi = allDisputes.filter((d) => d.status === 'eskalasi').length
+  const selesaiBulanIni = allDisputes.filter((d) => d.status === 'selesai').length
 
   const getSLAText = (dispute: Dispute) => {
     if (dispute.status === 'selesai') return 'Selesai'

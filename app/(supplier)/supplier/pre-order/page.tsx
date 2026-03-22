@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { KomoditasCard } from '@/components/shared/KomoditasCard'
 import { Button } from '@/components/ui/button'
@@ -28,11 +28,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useAuthStore } from '@/store'
-import { getSupplierByUserId, getPreOrdersBySupplierId } from '@/lib/dummy'
+import { toast } from 'sonner'
 import { formatRupiah, formatKg } from '@/lib/utils/currency'
 import { KOMODITAS } from '@/lib/constants/komoditas'
 import { PROVINSI } from '@/lib/constants/wilayah'
-import { Plus, Package } from 'lucide-react'
+import { Plus, Package, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import type { StatusPreOrder } from '@/types'
 
@@ -46,10 +46,44 @@ const TAB_MAP: { value: string; label: string; statuses: StatusPreOrder[] }[] = 
 
 export default function SupplierPreOrderPage() {
   const user = useAuthStore((s) => s.user)
-  const supplier = user ? getSupplierByUserId(user.id) : null
-  const preOrders = supplier ? getPreOrdersBySupplierId(supplier.id) : []
+  const [supplier, setSupplier] = useState<any>(null)
 
+  useEffect(() => {
+    if (!user?.id) return
+    async function fetchSupplier() {
+      try {
+        const res = await fetch(`/api/supplier/dashboard?user_id=${user!.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success) setSupplier(data.supplier || null)
+        }
+      } catch {
+        // fallback
+      }
+    }
+    fetchSupplier()
+  }, [user?.id])
+
+  const [preOrders, setPreOrders] = useState<import('@/types').PreOrder[]>([])
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+
+  const fetchPreOrders = useCallback(async () => {
+    if (!supplier) return
+    try {
+      const res = await fetch(`/api/supplier/pre-order?supplier_id=${supplier.id}`)
+      if (res.ok) {
+        const data = await res.json()
+        setPreOrders(data.pre_orders || [])
+      }
+    } catch {
+      // fallback to empty
+    }
+  }, [supplier])
+
+  useEffect(() => {
+    fetchPreOrders()
+  }, [fetchPreOrders])
   const [showPreview, setShowPreview] = useState(false)
   const [form, setForm] = useState({
     komoditas: '',
@@ -77,19 +111,52 @@ export default function SupplierPreOrderPage() {
     setShowPreview(true)
   }
 
-  function handleSubmit() {
-    setDialogOpen(false)
-    setShowPreview(false)
-    setForm({
-      komoditas: '',
-      grade: '',
-      volume_kg: '',
-      harga_penawaran_per_kg: '',
-      tanggal_dibutuhkan: '',
-      wilayah_tujuan: '',
-      catatan_spesifikasi: '',
-      catatan_kualitas: '',
-    })
+  async function handleSubmit() {
+    if (!supplier) return
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/supplier/pre-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplier_id: supplier.id,
+          komoditas: form.komoditas,
+          grade: form.grade,
+          volume_kg: Number(form.volume_kg),
+          harga_penawaran_per_kg: Number(form.harga_penawaran_per_kg),
+          tanggal_dibutuhkan: form.tanggal_dibutuhkan,
+          wilayah_tujuan: form.wilayah_tujuan,
+          catatan_spesifikasi: form.catatan_spesifikasi || undefined,
+          catatan_kualitas_supplier: form.catatan_kualitas || undefined,
+        }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Gagal membuat pre-order')
+      }
+
+      const data = await res.json()
+      toast.success(`Pre-order berhasil dibuat! Deposit: Rp ${data.pre_order.deposit_dibayar.toLocaleString('id-ID')}`)
+
+      setDialogOpen(false)
+      setShowPreview(false)
+      setForm({
+        komoditas: '',
+        grade: '',
+        volume_kg: '',
+        harga_penawaran_per_kg: '',
+        tanggal_dibutuhkan: '',
+        wilayah_tujuan: '',
+        catatan_spesifikasi: '',
+        catatan_kualitas: '',
+      })
+      fetchPreOrders()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -305,7 +372,8 @@ export default function SupplierPreOrderPage() {
                   <Button variant="outline" onClick={() => setShowPreview(false)} className="flex-1">
                     Edit
                   </Button>
-                  <Button className="flex-1 bg-tani-green hover:bg-tani-green/90" onClick={handleSubmit}>
+                  <Button className="flex-1 bg-tani-green hover:bg-tani-green/90" onClick={handleSubmit} disabled={submitting}>
+                    {submitting && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
                     Kirim Pre-Order
                   </Button>
                 </DialogFooter>

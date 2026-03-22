@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatCard } from '@/components/shared/StatCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -8,10 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { CairkanDialog } from '@/components/petani/CairkanDialog'
 import { useAuthStore } from '@/store'
-import {
-  getKontribusiByPetaniId, getKreditByPetaniId, dummyHargaHistoris,
-  getPencairanByPetaniId,
-} from '@/lib/dummy'
 import { formatRupiah } from '@/lib/utils/currency'
 import { formatTanggalSingkat, timeAgo } from '@/lib/utils/date'
 import {
@@ -24,12 +20,44 @@ import { KYCStatusBanner } from '@/components/kyc/KYCStatusBanner'
 export default function PetaniDashboard() {
   const user = useAuthStore((s) => s.user)
   const [cairkanOpen, setCairkanOpen] = useState(false)
-  // Demo: use 'pending' as default KYC status. In production, fetch from Supabase.
-  const kycStatus: string = 'pending'
+  const [kontribusi, setKontribusi] = useState<any[]>([])
+  const [kredit] = useState<any[]>([])
+  const [pencairan, setPencairan] = useState<any[]>([])
+  const [hargaTerbaru, setHargaTerbaru] = useState<any>(null)
+  const [kycStatus, setKycStatus] = useState('pending')
 
-  const kontribusi = user ? getKontribusiByPetaniId(user.id) : []
-  const kredit = user ? getKreditByPetaniId(user.id) : []
-  const pencairan = user ? getPencairanByPetaniId(user.id) : []
+  const fetchDashboard = useCallback(async () => {
+    if (!user) return
+    try {
+      const res = await fetch(`/api/petani/dashboard?user_id=${user.id}`)
+      const data = await res.json()
+      if (data.success) {
+        setKontribusi(data.kontribusi || [])
+        setPencairan(data.pencairan || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch dashboard:', err)
+    }
+  }, [user])
+
+  const fetchKycStatus = useCallback(async () => {
+    if (!user) return
+    try {
+      const res = await fetch(`/api/kyc/status?user_id=${user.id}`)
+      const data = await res.json()
+      if (data.success) {
+        setKycStatus(data.kyc_status || 'pending')
+      }
+    } catch (err) {
+      console.error('Failed to fetch KYC status:', err)
+    }
+  }, [user])
+
+  useEffect(() => {
+    fetchDashboard()
+    fetchKycStatus()
+  }, [fetchDashboard, fetchKycStatus])
+
   const kreditAktif = kredit.find((k) => k.status === 'aktif')
 
   const saldoPending = kontribusi
@@ -44,11 +72,6 @@ export default function PetaniDashboard() {
     .filter((k) => k.status_bayar === 'dibayar')
     .sort((a, b) => new Date(b.tanggal_bayar || 0).getTime() - new Date(a.tanggal_bayar || 0).getTime())
     .slice(0, 5)
-
-  // Harga komoditas banner
-  const hargaTerbaru = dummyHargaHistoris
-    .filter((h) => h.komoditas === 'Cabai Merah')
-    .sort((a, b) => new Date(b.minggu).getTime() - new Date(a.minggu).getTime())[0]
 
   return (
     <>

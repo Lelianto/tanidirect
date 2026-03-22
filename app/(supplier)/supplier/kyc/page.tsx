@@ -1,11 +1,10 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { TrustScoreBadge } from '@/components/shared/TrustScoreBadge'
 import { Card, CardContent } from '@/components/ui/card'
-import { dummyKYCSubmissions } from '@/lib/dummy'
 import { useAuthStore } from '@/store'
 import { formatTanggal } from '@/lib/utils/date'
 // DIDIT_DISABLED: akan diaktifkan kembali setelah bug selesai
@@ -16,10 +15,27 @@ const LAYERS = [1, 2, 3] as const
 
 export default function SupplierKYCPage() {
   const user = useAuthStore((s) => s.user)
+  const [kycData, setKycData] = useState<any[]>([])
+
+  useEffect(() => {
+    if (!user?.id) return
+    async function fetchKyc() {
+      try {
+        const res = await fetch(`/api/kyc/status?user_id=${user!.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          setKycData(data.submissions || [])
+        }
+      } catch {
+        // fallback to empty
+      }
+    }
+    fetchKyc()
+  }, [user?.id])
 
   const mySubmissions = useMemo(
-    () => dummyKYCSubmissions.filter((k) => k.user_id === user?.id),
-    [user?.id],
+    () => kycData,
+    [kycData],
   )
 
   // Determine current trust level from highest approved layer
@@ -83,7 +99,7 @@ export default function SupplierKYCPage() {
                 {submission ? (
                   <>
                     <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
-                      {submission.documents.map((doc) => (
+                      {submission.documents.map((doc: any) => (
                         <div key={doc.id} className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5">
                             <FileText className="h-3.5 w-3.5 text-muted-foreground" />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatCard } from '@/components/shared/StatCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -24,9 +24,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useAuthStore } from '@/store'
-import {
-  getSupplierByUserId, dummyTransaksi, dummyPoktan,
-} from '@/lib/dummy'
 import { formatRupiah, formatKg, formatNumber } from '@/lib/utils/currency'
 import { formatTanggalSingkat } from '@/lib/utils/date'
 import { KOMODITAS, GRADE_COLORS } from '@/lib/constants/komoditas'
@@ -47,8 +44,25 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
 
 export default function SupplierTransaksiPage() {
   const user = useAuthStore((s) => s.user)
-  const supplier = user ? getSupplierByUserId(user.id) : null
-  const allTransaksi = dummyTransaksi.filter((t) => t.supplier_id === supplier?.id)
+  const [allTransaksi, setAllTransaksi] = useState<any[]>([])
+
+  useEffect(() => {
+    if (!user?.id) return
+    async function fetchTransaksi() {
+      try {
+        const res = await fetch(`/api/supplier/transaksi?user_id=${user!.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success) {
+            setAllTransaksi(data.transaksi || [])
+          }
+        }
+      } catch {
+        // fallback to empty
+      }
+    }
+    fetchTransaksi()
+  }, [user?.id])
 
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterKomoditas, setFilterKomoditas] = useState('all')
@@ -69,7 +83,8 @@ export default function SupplierTransaksiPage() {
   const totalVolume = filtered.reduce((sum, t) => sum + (t.volume_aktual_kg || t.volume_estimasi_kg), 0)
 
   function getPoktanName(poktanId: string) {
-    return dummyPoktan.find((p) => p.id === poktanId)?.nama_poktan || '-'
+    const t = allTransaksi.find((tx: any) => tx.poktan_id === poktanId)
+    return t?.poktan?.nama_poktan || '-'
   }
 
   return (

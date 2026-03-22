@@ -4,10 +4,6 @@ import { TopBar } from '@/components/shared/TopBar'
 import { StatCard } from '@/components/shared/StatCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  dummyPoktan, dummySuppliers, dummyTransaksi, dummyAnomali,
-  dummyKredit,
-} from '@/lib/dummy'
 import { formatRupiah } from '@/lib/utils/currency'
 import { timeAgo } from '@/lib/utils/date'
 import {
@@ -15,21 +11,33 @@ import {
   AlertTriangle, ChevronRight,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
 } from 'recharts'
 
 export default function AdminDashboard() {
-  const poktanAktif = dummyPoktan.filter((p) => p.status_sertifikasi === 'aktif')
-  const supplierVerified = dummySuppliers.filter((s) => s.is_verified)
-  const transaksiSelesai = dummyTransaksi.filter((t) => t.status === 'selesai')
-  const totalKomisi = transaksiSelesai.reduce((sum, t) => sum + (t.komisi_platform || 0), 0)
-  const totalVolume = transaksiSelesai.reduce((sum, t) => sum + (t.volume_aktual_kg || t.volume_estimasi_kg), 0)
+  const [stats, setStats] = useState({
+    total_users: 0, poktan_aktif: 0, supplier_verified: 0,
+    transaksi_selesai: 0, total_komisi: 0, total_volume: 0,
+    anomali_open: 0, kredit_pending: 0, pre_order_open: 0, disputes_aktif: 0,
+  })
+  const [anomaliOpen, setAnomaliOpen] = useState<any[]>([])
+  const [kreditPending, setKreditPending] = useState<any[]>([])
 
-  const anomaliOpen = dummyAnomali.filter((a) => a.status_tindak_lanjut === 'open')
-  const kreditPending = dummyKredit.filter((k) => k.status === 'pending')
+  useEffect(() => {
+    fetch('/api/admin/dashboard')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setStats(data.stats)
+          setAnomaliOpen(data.recent_anomali || [])
+          setKreditPending(data.recent_kredit || [])
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const chartData = useMemo(() => {
     const months = ['Okt', 'Nov', 'Des', 'Jan', 'Feb', 'Mar']
@@ -48,26 +56,26 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard
             title="Poktan Aktif"
-            value={String(poktanAktif.length)}
-            subtitle={`dari ${dummyPoktan.length} total`}
+            value={String(stats.poktan_aktif)}
+            subtitle={`dari ${stats.total_users} total`}
             icon={<Users className="h-5 w-5" />}
           />
           <StatCard
             title="Supplier"
-            value={String(supplierVerified.length)}
+            value={String(stats.supplier_verified)}
             subtitle="terverifikasi"
             icon={<Building2 className="h-5 w-5" />}
           />
           <StatCard
             title="Volume Bulan Ini"
-            value={`${(totalVolume / 1000).toFixed(1)} ton`}
+            value={`${(stats.total_volume / 1000).toFixed(1)} ton`}
             icon={<TrendingUp className="h-5 w-5" />}
             trend="up"
             trendValue="+12%"
           />
           <StatCard
             title="Pendapatan Komisi"
-            value={formatRupiah(totalKomisi)}
+            value={formatRupiah(stats.total_komisi)}
             icon={<Wallet className="h-5 w-5" />}
             trend="up"
             trendValue="+18%"
@@ -105,7 +113,7 @@ export default function AdminDashboard() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-semibold flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-orange-500" />
-                    Anomali Belum Ditangani ({anomaliOpen.length})
+                    Anomali Belum Ditangani ({stats.anomali_open})
                   </CardTitle>
                   <Link href="/admin/compliance" className="text-xs text-tani-green font-medium flex items-center">
                     Lihat <ChevronRight className="h-3 w-3" />
@@ -113,20 +121,17 @@ export default function AdminDashboard() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
-                {anomaliOpen.map((a) => {
-                  const poktan = dummyPoktan.find((p) => p.id === a.poktan_id)
-                  return (
+                {anomaliOpen.map((a: any) => (
                     <div key={a.id} className="flex items-center justify-between bg-white rounded-lg p-3">
                       <div>
-                        <p className="text-sm font-medium">{poktan?.nama_poktan}</p>
+                        <p className="text-sm font-medium">{a.poktan?.nama_poktan}</p>
                         <p className="text-xs text-muted-foreground truncate max-w-[200px]">
                           {(a.temuan as { deskripsi?: string })?.deskripsi}
                         </p>
                       </div>
                       <StatusBadge status={a.tingkat_risiko} />
                     </div>
-                  )
-                })}
+                  ))}
               </CardContent>
             </Card>
 
@@ -135,7 +140,7 @@ export default function AdminDashboard() {
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-semibold">
-                    Kredit Menunggu Review ({kreditPending.length})
+                    Kredit Menunggu Review ({stats.kredit_pending})
                   </CardTitle>
                   <Link href="/admin/kredit" className="text-xs text-tani-green font-medium flex items-center">
                     Review <ChevronRight className="h-3 w-3" />
@@ -143,20 +148,17 @@ export default function AdminDashboard() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
-                {kreditPending.map((k) => {
-                  const petani = dummyUsers_find(k.petani_id)
-                  return (
+                {kreditPending.map((k: any) => (
                     <div key={k.id} className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium">{petani?.nama_lengkap || 'Petani'}</p>
+                        <p className="text-sm font-medium">{k.petani?.nama_lengkap || 'Petani'}</p>
                         <p className="text-xs text-muted-foreground">
                           {formatRupiah(k.jumlah_diajukan)} — Skor AI: {k.ai_skor}
                         </p>
                       </div>
                       <StatusBadge status={k.status} />
                     </div>
-                  )
-                })}
+                  ))}
               </CardContent>
             </Card>
           </div>
@@ -166,8 +168,3 @@ export default function AdminDashboard() {
   )
 }
 
-// helper
-import { dummyUsers } from '@/lib/dummy'
-function dummyUsers_find(id: string) {
-  return dummyUsers.find((u) => u.id === id)
-}

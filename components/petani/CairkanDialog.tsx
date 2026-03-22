@@ -12,9 +12,11 @@ import { Separator } from '@/components/ui/separator'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatRupiah } from '@/lib/utils/currency'
 import type { RekeningInfo } from '@/types'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/store'
 import {
   Wallet, Building2, Smartphone, CheckCircle, ArrowRight,
-  ArrowLeft, AlertCircle, Pencil, Shield,
+  ArrowLeft, AlertCircle, Pencil, Shield, Loader2,
 } from 'lucide-react'
 
 const BANK_OPTIONS = ['BRI', 'BCA', 'BNI', 'Mandiri', 'BSI'] as const
@@ -31,7 +33,9 @@ interface CairkanDialogProps {
 type Step = 'rekening' | 'konfirmasi' | 'sukses'
 
 export function CairkanDialog({ open, onOpenChange, saldoPending, savedRekening }: CairkanDialogProps) {
+  const user = useAuthStore((s) => s.user)
   const [step, setStep] = useState<Step>(savedRekening ? 'konfirmasi' : 'rekening')
+  const [submitting, setSubmitting] = useState(false)
   const [metode, setMetode] = useState<'bank' | 'ewallet'>(savedRekening?.metode || 'bank')
   const [provider, setProvider] = useState(savedRekening?.provider || '')
   const [nomor, setNomor] = useState(savedRekening?.nomor || '')
@@ -50,8 +54,32 @@ export function CairkanDialog({ open, onOpenChange, saldoPending, savedRekening 
     }, 200)
   }
 
-  function handleSubmit() {
-    setStep('sukses')
+  async function handleSubmit() {
+    if (!user) return
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/petani/cairkan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          petani_id: user.id,
+          jumlah: saldoPending,
+          rekening: { metode, provider, nomor, atas_nama: atasNama },
+        }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Gagal memproses pencairan')
+      }
+
+      setStep('sukses')
+      toast.success('Pencairan berhasil diproses!')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -269,7 +297,9 @@ export function CairkanDialog({ open, onOpenChange, saldoPending, savedRekening 
               <Button
                 className="bg-tani-green hover:bg-tani-green/90 text-white"
                 onClick={handleSubmit}
+                disabled={submitting}
               >
+                {submitting && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
                 Cairkan {formatRupiah(jumlahDiterima)}
               </Button>
             </>

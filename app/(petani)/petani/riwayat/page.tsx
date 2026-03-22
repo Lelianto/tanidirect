@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatCard } from '@/components/shared/StatCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/u
 import { Separator } from '@/components/ui/separator'
 import { CairkanDialog } from '@/components/petani/CairkanDialog'
 import { useAuthStore } from '@/store'
-import { getKontribusiByPetaniId, getPencairanByPetaniId, dummyTransaksi } from '@/lib/dummy'
 import { formatRupiah, formatKg } from '@/lib/utils/currency'
 import { formatTanggalSingkat } from '@/lib/utils/date'
 import { Wallet, Package, ArrowDownToLine, BarChart3, History } from 'lucide-react'
@@ -39,16 +38,26 @@ export default function PetaniRiwayatPage() {
   const user = useAuthStore((s) => s.user)
   const [filterMonth, setFilterMonth] = useState('all')
   const [cairkanOpen, setCairkanOpen] = useState(false)
+  const [kontribusi, setKontribusi] = useState<any[]>([])
+  const [pencairan, setPencairan] = useState<any[]>([])
 
-  const kontribusi = useMemo(() => {
-    if (!user) return []
-    return getKontribusiByPetaniId(user.id)
+  const fetchRiwayat = useCallback(async () => {
+    if (!user) return
+    try {
+      const res = await fetch(`/api/petani/riwayat?user_id=${user.id}`)
+      const data = await res.json()
+      if (data.success) {
+        setKontribusi(data.kontribusi || [])
+        setPencairan(data.pencairan || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch riwayat:', err)
+    }
   }, [user])
 
-  const pencairan = useMemo(() => {
-    if (!user) return []
-    return getPencairanByPetaniId(user.id)
-  }, [user])
+  useEffect(() => {
+    fetchRiwayat()
+  }, [fetchRiwayat])
 
   const filtered = useMemo(() => {
     if (filterMonth === 'all') return kontribusi
@@ -173,7 +182,7 @@ export default function PetaniRiwayatPage() {
         {/* Kontribusi List */}
         <div className="space-y-3">
           {filtered.map((k) => {
-            const tx = k.transaksi || dummyTransaksi.find((t) => t.id === k.transaksi_id)
+            const tx = k.transaksi
             return (
               <Card key={k.id} className="shadow-sm">
                 <CardContent className="p-4">

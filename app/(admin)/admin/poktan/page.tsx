@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatCard } from '@/components/shared/StatCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -14,7 +14,6 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
-import { dummyPoktan } from '@/lib/dummy'
 import { formatNumber } from '@/lib/utils/currency'
 import {
   Users, ShieldCheck, BarChart3, MoreVertical, Eye, CheckCircle, Ban, MapPin,
@@ -28,19 +27,29 @@ export default function AdminPoktanPage() {
   const [filterProvinsi, setFilterProvinsi] = useState('Semua Provinsi')
   const [filterSertifikasi, setFilterSertifikasi] = useState('Semua Status')
   const [filterKomoditas, setFilterKomoditas] = useState('Semua Komoditas')
+  const [allPoktan, setAllPoktan] = useState<any[]>([])
+
+  useEffect(() => {
+    fetch('/api/admin/poktan')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setAllPoktan(data.poktan || [])
+      })
+      .catch(() => {})
+  }, [])
 
   const filtered = useMemo(() => {
-    return dummyPoktan.filter((p) => {
+    return allPoktan.filter((p: any) => {
       if (filterProvinsi !== 'Semua Provinsi' && p.provinsi !== filterProvinsi) return false
       if (filterSertifikasi !== 'Semua Status' && p.status_sertifikasi !== filterSertifikasi) return false
       if (filterKomoditas !== 'Semua Komoditas' && !p.komoditas_utama.includes(filterKomoditas)) return false
       return true
     })
-  }, [filterProvinsi, filterSertifikasi, filterKomoditas])
+  }, [allPoktan, filterProvinsi, filterSertifikasi, filterKomoditas])
 
-  const totalPoktan = dummyPoktan.length
-  const certified = dummyPoktan.filter((p) => p.is_qa_certified).length
-  const avgQA = dummyPoktan.reduce((sum, p) => sum + p.skor_qa, 0) / totalPoktan
+  const totalPoktan = allPoktan.length
+  const certified = allPoktan.filter((p: any) => p.is_qa_certified).length
+  const avgQA = totalPoktan > 0 ? allPoktan.reduce((sum: number, p: any) => sum + p.skor_qa, 0) / totalPoktan : 0
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -130,7 +139,7 @@ export default function AdminPoktanPage() {
                         <p className="font-semibold text-sm">{p.nama_poktan}</p>
                         <p className="text-xs text-muted-foreground">{p.kode_poktan}</p>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {p.komoditas_utama.slice(0, 3).map((k) => (
+                          {p.komoditas_utama.slice(0, 3).map((k: string) => (
                             <Badge key={k} variant="outline" className="text-[10px] px-1.5 py-0">
                               {k}
                             </Badge>
@@ -218,7 +227,7 @@ export default function AdminPoktanPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-1 mb-3">
-                  {p.komoditas_utama.map((k) => (
+                  {p.komoditas_utama.map((k: string) => (
                     <Badge key={k} variant="outline" className="text-[10px] px-1.5 py-0">
                       {k}
                     </Badge>

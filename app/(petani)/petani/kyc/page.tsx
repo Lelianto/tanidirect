@@ -1,25 +1,45 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { TrustScoreBadge } from '@/components/shared/TrustScoreBadge'
 import { Card, CardContent } from '@/components/ui/card'
-import { dummyKYCSubmissions } from '@/lib/dummy'
 import { useAuthStore } from '@/store'
 import { formatTanggal } from '@/lib/utils/date'
 import { FileCheck, FileText, Shield, Info } from 'lucide-react'
 
 export default function PetaniKYCPage() {
   const user = useAuthStore((s) => s.user)
+  const [submissions, setSubmissions] = useState<any[]>([])
 
-  const mySubmission = useMemo(
-    () =>
-      dummyKYCSubmissions.find(
-        (k) => k.user_id === user?.id && k.layer === 1,
-      ),
-    [user?.id],
-  )
+  const fetchKycStatus = useCallback(async () => {
+    if (!user) return
+    try {
+      const res = await fetch(`/api/kyc/status?user_id=${user.id}`)
+      const data = await res.json()
+      if (data.success) {
+        setSubmissions(data.submissions || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch KYC status:', err)
+    }
+  }, [user])
+
+  useEffect(() => {
+    fetchKycStatus()
+  }, [fetchKycStatus])
+
+  const mySubmission = useMemo(() => {
+    const sub = submissions.find(
+      (k) => k.user_id === user?.id && k.layer === 1,
+    )
+    if (!sub) return undefined
+    return {
+      ...sub,
+      documents: sub.kyc_submission_documents || sub.documents || [],
+    }
+  }, [submissions, user?.id])
 
   const currentTrustLevel = useMemo(() => {
     if (mySubmission?.status === 'approved') return mySubmission.trust_level
@@ -84,7 +104,7 @@ export default function PetaniKYCPage() {
             {mySubmission ? (
               <>
                 <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
-                  {mySubmission.documents.map((doc) => (
+                  {mySubmission.documents.map((doc: { id: string; nama: string; status: string }) => (
                     <div key={doc.id} className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <FileText className="h-3.5 w-3.5 text-muted-foreground" />

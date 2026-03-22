@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { StatCard } from '@/components/shared/StatCard'
@@ -12,7 +12,6 @@ import { Label } from '@/components/ui/label'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
-import { dummyKYCSubmissions, dummyUsers } from '@/lib/dummy'
 import { formatTanggal } from '@/lib/utils/date'
 import { useAuthStore } from '@/store'
 import { toast } from 'sonner'
@@ -45,43 +44,23 @@ export default function AdminKYCPage() {
   const [docImages, setDocImages] = useState<Record<string, string>>({})
   const [loadingImages, setLoadingImages] = useState(false)
 
-  // Demo data — in production, this would be fetched from Supabase
-  const queueItems: KYCQueueItem[] = useMemo(() => {
-    return dummyKYCSubmissions
-      .filter((s) => s.status === 'pending' || s.status === 'revisi')
-      .map((s) => ({
-        id: s.id,
-        user_id: s.user_id,
-        user_nama: s.user_nama,
-        user_role: s.user_role,
-        kyc_status: s.status === 'pending' ? 'docs_submitted' : 'docs_revision',
-        kyc_submitted_at: s.submitted_at,
-        kyc_reviewer_notes: s.reviewer_catatan,
-        docs: s.documents.map((d) => ({
-          doc_type: d.nama.toLowerCase().includes('ktp') ? 'ktp' : 'selfie',
-          file_path: `${s.user_id}/${d.nama.toLowerCase().includes('ktp') ? 'ktp' : 'selfie'}_demo.jpg`,
-          status: d.status,
-        })),
-        days_waiting: Math.floor(
-          (Date.now() - new Date(s.submitted_at).getTime()) / (1000 * 60 * 60 * 24)
-        ),
-      }))
-      .sort((a, b) => b.days_waiting - a.days_waiting)
-  }, [])
+  const [queueItems, setQueueItems] = useState<KYCQueueItem[]>([])
+  const [auditLog, setAuditLog] = useState<any[]>([])
 
-  const auditLog = useMemo(() => {
-    return dummyKYCSubmissions
-      .filter((s) => s.status === 'approved' || s.status === 'rejected')
-      .map((s) => ({
-        id: s.id,
-        user_nama: s.user_nama,
-        user_role: s.user_role,
-        action: s.status === 'approved' ? 'kyc_approve' : 'kyc_reject',
-        admin: 'Admin Platform',
-        catatan: s.reviewer_catatan || '-',
-        created_at: s.reviewed_at || s.submitted_at,
-      }))
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  useEffect(() => {
+    fetch('/api/admin/kyc/queue')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setQueueItems(data.queue || [])
+      })
+      .catch(() => {})
+
+    fetch('/api/admin/kyc/audit')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setAuditLog(data.logs || [])
+      })
+      .catch(() => {})
   }, [])
 
   const pendingCount = queueItems.filter((i) => i.kyc_status === 'docs_submitted').length

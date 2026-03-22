@@ -234,36 +234,82 @@ export default function RegisterPage() {
     setStep((s) => Math.max(s - 1, 0))
   }
 
-  function handleSubmit() {
-    // Build user object for demo
-    const now = new Date().toISOString()
-    const id = `u-${role}-${Date.now()}`
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
 
-    const user = {
-      id,
-      role: role as UserRole,
-      nama_lengkap: dataDiri.nama_lengkap,
-      no_hp: dataDiri.no_hp,
-      no_ktp: dataDiri.no_ktp || undefined,
-      provinsi: wilayah.provinsi,
-      kabupaten: wilayah.kabupaten,
-      kecamatan: wilayah.kecamatan || undefined,
-      alamat: alamat || undefined,
-      is_verified: false,
-      is_active: true,
-      rekening:
-        !skipRekening && provider
-          ? { metode, provider, nomor: nomorRekening, atas_nama: atasNama }
-          : undefined,
-      created_at: now,
-      updated_at: now,
+  async function handleSubmit() {
+    setIsSubmitting(true)
+    try {
+      // Build request body
+      const body: Record<string, unknown> = {
+        role,
+        nama_lengkap: dataDiri.nama_lengkap,
+        no_hp: dataDiri.no_hp,
+        no_ktp: dataDiri.no_ktp || undefined,
+        provinsi: wilayah.provinsi,
+        kabupaten: wilayah.kabupaten,
+        kecamatan: wilayah.kecamatan || undefined,
+        alamat: alamat || undefined,
+      }
+
+      // Rekening
+      if (!skipRekening && provider) {
+        body.rekening = { metode, provider, nomor: nomorRekening, atas_nama: atasNama }
+      }
+
+      // Role-specific data
+      if (role === 'petani') {
+        body.petani = {
+          lahan_ha: lahanHa ? Number(lahanHa) : undefined,
+          komoditas: komoditasPetani,
+          tanggal_bergabung: tglBergabung?.toISOString(),
+        }
+      } else if (role === 'ketua_poktan') {
+        body.poktan = {
+          nama_poktan: namaPoktan,
+          kode_poktan: kodePoktan,
+          desa: poktanWilayah.desa || poktanWilayah.kecamatan,
+          kecamatan: poktanWilayah.kecamatan,
+          kabupaten: poktanWilayah.kabupaten,
+          provinsi: poktanWilayah.provinsi,
+          komoditas_utama: komoditasUtama,
+          jumlah_anggota: jumlahAnggota ? Number(jumlahAnggota) : 0,
+          tanggal_sertifikasi: tglSertifikasi?.toISOString() || null,
+        }
+      } else if (role === 'supplier') {
+        body.supplier = {
+          nama_perusahaan: namaPerusahaan,
+          npwp: npwp || undefined,
+          jenis_usaha: jenisUsaha || undefined,
+          wilayah_operasi: wilayahOperasi,
+          kapasitas_bulanan_ton: kapasitasBulanan ? Number(kapasitasBulanan) : undefined,
+        }
+      }
+
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(data.error || 'Pendaftaran gagal')
+        return
+      }
+
+      // Set user in store
+      if (data.user) {
+        setUser(data.user)
+      }
+
+      toast.success('Pendaftaran berhasil!')
+      setStep(steps.length - 1)
+    } catch {
+      toast.error('Terjadi kesalahan. Silakan coba lagi.')
+    } finally {
+      setIsSubmitting(false)
     }
-
-    setUser(user)
-    toast.success('Pendaftaran berhasil!')
-
-    // Navigate to next step (success view)
-    setStep(steps.length - 1)
   }
 
   // Redirect after success
@@ -956,9 +1002,9 @@ export default function RegisterPage() {
               </Link>
             )}
             {isLastFormStep ? (
-              <Button className="flex-1" onClick={handleSubmit}>
-                Daftar
-                <CheckCircle2 className="size-4 ml-1" />
+              <Button className="flex-1" onClick={handleSubmit} disabled={isSubmitting}>
+                {isSubmitting ? 'Mendaftar...' : 'Daftar'}
+                {!isSubmitting && <CheckCircle2 className="size-4 ml-1" />}
               </Button>
             ) : (
               <Button className="flex-1" onClick={handleNext} disabled={step === 0 && !role}>

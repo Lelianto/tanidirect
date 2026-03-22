@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { KomoditasCard } from '@/components/shared/KomoditasCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -19,10 +19,6 @@ import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select'
 import { useAuthStore } from '@/store'
-import {
-  dummyPoktan, dummyPreOrders, dummySuppliers,
-  getPoktanByKetuaId,
-} from '@/lib/dummy'
 import { formatRupiah, formatKg } from '@/lib/utils/currency'
 import { formatTanggalSingkat } from '@/lib/utils/date'
 import { GRADE_COLORS } from '@/lib/constants/komoditas'
@@ -34,7 +30,27 @@ import type { PreOrder } from '@/types'
 
 export default function PreOrderPage() {
   const user = useAuthStore((s) => s.user)
-  const poktan = user ? getPoktanByKetuaId(user.id) : dummyPoktan[0]
+
+  const [poktan, setPoktan] = useState<any>(null)
+  const [matchedPreOrders, setMatchedPreOrders] = useState<any[]>([])
+  const [openPreOrders, setOpenPreOrders] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!user) return
+    setLoading(true)
+    fetch(`/api/poktan/pre-order?user_id=${user.id}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.success) {
+          setPoktan(data.poktan)
+          setMatchedPreOrders(data.matched_pre_orders || [])
+          setOpenPreOrders(data.open_pre_orders || [])
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [user])
 
   // Filters
   const [filterKomoditas, setFilterKomoditas] = useState<string>('semua')
@@ -47,38 +63,36 @@ export default function PreOrderPage() {
   const [tanggalEstimasi, setTanggalEstimasi] = useState('')
   const [catatanPenawaran, setCatatanPenawaran] = useState('')
 
-  function getSupplierName(supplierId: string) {
-    const supplier = dummySuppliers.find((s) => s.id === supplierId)
-    return supplier?.nama_perusahaan || '-'
+  function getSupplierName(po: any) {
+    return po.supplier?.nama_perusahaan || '-'
   }
+
+  // Combine all pre-orders for filtering
+  const allPreOrders = useMemo(() => [...openPreOrders, ...matchedPreOrders], [openPreOrders, matchedPreOrders])
 
   // Pre-orders filtered by tabs
   const poTersedia = useMemo(() => {
-    let list = dummyPreOrders.filter(
-      (po) => po.status === 'open' && poktan?.komoditas_utama.includes(po.komoditas)
-    )
+    let list = openPreOrders.filter((po: any) => po.status === 'open')
     if (filterKomoditas !== 'semua') {
-      list = list.filter((po) => po.komoditas === filterKomoditas)
+      list = list.filter((po: any) => po.komoditas === filterKomoditas)
     }
     if (filterGrade !== 'semua') {
-      list = list.filter((po) => po.grade === filterGrade)
+      list = list.filter((po: any) => po.grade === filterGrade)
     }
     return list
-  }, [poktan, filterKomoditas, filterGrade])
+  }, [openPreOrders, filterKomoditas, filterGrade])
 
-  const poDiajukan = dummyPreOrders.filter(
-    (po) => po.status === 'matched' && po.poktan_matched_id === poktan?.id
+  const poDiajukan = matchedPreOrders.filter(
+    (po: any) => po.status === 'matched'
   )
-  const poDisetujui = dummyPreOrders.filter(
-    (po) => po.status === 'confirmed' && po.poktan_matched_id === poktan?.id
+  const poDisetujui = matchedPreOrders.filter(
+    (po: any) => po.status === 'confirmed'
   )
-  const poRiwayat = dummyPreOrders.filter(
-    (po) =>
-      ['fulfilled', 'cancelled'].includes(po.status) &&
-      po.poktan_matched_id === poktan?.id
+  const poRiwayat = matchedPreOrders.filter(
+    (po: any) => ['fulfilled', 'cancelled'].includes(po.status)
   )
 
-  const komoditasOptions = [...new Set(dummyPreOrders.filter((po) => po.status === 'open').map((po) => po.komoditas))]
+  const komoditasOptions = [...new Set(openPreOrders.filter((po: any) => po.status === 'open').map((po: any) => po.komoditas))]
 
   function openKirimPenawaran(po: PreOrder) {
     setSelectedPO(po)
@@ -115,7 +129,7 @@ export default function PreOrderPage() {
                 </span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Supplier: {getSupplierName(po.supplier_id)}
+                Supplier: {getSupplierName(po)}
               </p>
               <p className="text-xs text-muted-foreground">
                 Tujuan: {po.wilayah_tujuan}

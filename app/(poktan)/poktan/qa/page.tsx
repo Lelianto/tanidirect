@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -8,10 +8,6 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { useAuthStore } from '@/store'
-import {
-  dummyPoktan, dummyTransaksi, dummyQAInspeksi, dummySuppliers,
-  getPoktanByKetuaId,
-} from '@/lib/dummy'
 import { formatRupiah, formatKg } from '@/lib/utils/currency'
 import { formatTanggalSingkat } from '@/lib/utils/date'
 import { GRADE_COLORS } from '@/lib/constants/komoditas'
@@ -25,21 +21,53 @@ import type { Transaksi } from '@/types'
 
 export default function QAInspeksiPage() {
   const user = useAuthStore((s) => s.user)
-  const poktan = user ? getPoktanByKetuaId(user.id) : dummyPoktan[0]
 
-  const poktanTransaksi = dummyTransaksi.filter((t) => t.poktan_id === poktan?.id)
-  const qaMap = new Map(dummyQAInspeksi.map((qa) => [qa.transaksi_id, qa]))
+  const [poktan, setPoktan] = useState<any>(null)
+  const [poktanTransaksi, setPoktanTransaksi] = useState<any[]>([])
+  const [inspections, setInspections] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Step 1: Fetch poktan from dashboard API
+  useEffect(() => {
+    if (!user) return
+    setLoading(true)
+    fetch(`/api/poktan/dashboard?user_id=${user.id}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.success && data.poktan) {
+          setPoktan(data.poktan)
+        }
+      })
+      .catch(() => {})
+  }, [user])
+
+  // Step 2: Fetch QA data once poktan is loaded
+  useEffect(() => {
+    if (!poktan?.id) return
+    fetch(`/api/poktan/qa?poktan_id=${poktan.id}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.success) {
+          setInspections(data.inspections || [])
+          setPoktanTransaksi(data.transactions || [])
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [poktan?.id])
+
+  const qaMap = useMemo(() => new Map(inspections.map((qa: any) => [qa.transaksi_id, qa])), [inspections])
 
   // Transaksi that need QA: have no QA or QA is pending
-  const perluQA = poktanTransaksi.filter((t) => {
+  const perluQA = useMemo(() => poktanTransaksi.filter((t: any) => {
     const qa = qaMap.get(t.id)
     return !qa || qa.status === 'pending'
-  })
+  }), [poktanTransaksi, qaMap])
 
   // Completed QA
-  const riwayatQA = dummyQAInspeksi.filter(
-    (qa) => qa.poktan_id === poktan?.id && qa.status !== 'pending'
-  )
+  const riwayatQA = useMemo(() => inspections.filter(
+    (qa: any) => qa.status !== 'pending'
+  ), [inspections])
 
   // Draft tracking
   const [draftTxIds, setDraftTxIds] = useState<Set<string>>(new Set())
@@ -56,9 +84,8 @@ export default function QAInspeksiPage() {
     setDraftTimestamps(timestamps)
   }, [])
 
-  function getSupplierName(supplierId: string) {
-    const supplier = dummySuppliers.find((s) => s.id === supplierId)
-    return supplier?.nama_perusahaan || '-'
+  function getSupplierName(tx: any) {
+    return tx.supplier?.nama_perusahaan || '-'
   }
 
   function renderTxCard(tx: Transaksi) {
@@ -87,7 +114,7 @@ export default function QAInspeksiPage() {
                 </span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Supplier: {getSupplierName(tx.supplier_id)}
+                Supplier: {getSupplierName(tx)}
               </p>
               {hasDraft && draftTime && (
                 <div className="flex items-center gap-1 text-[10px] text-tani-amber">
@@ -151,8 +178,8 @@ export default function QAInspeksiPage() {
                   Belum ada riwayat inspeksi QA
                 </p>
               ) : (
-                riwayatQA.map((qa) => {
-                  const tx = dummyTransaksi.find((t) => t.id === qa.transaksi_id)
+                riwayatQA.map((qa: any) => {
+                  const tx = poktanTransaksi.find((t: any) => t.id === qa.transaksi_id)
                   return (
                     <Card key={qa.id} className="shadow-sm">
                       <CardContent className="p-4">
