@@ -3,19 +3,34 @@ import { createServiceClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   try {
-    const poktanId = request.nextUrl.searchParams.get('poktan_id')
-    if (!poktanId) {
-      return NextResponse.json({ error: 'poktan_id wajib diisi' }, { status: 400 })
+    const userId = request.nextUrl.searchParams.get('user_id')
+    const poktanIdParam = request.nextUrl.searchParams.get('poktan_id')
+    if (!userId && !poktanIdParam) {
+      return NextResponse.json({ error: 'user_id atau poktan_id wajib diisi' }, { status: 400 })
     }
 
     const supabase = createServiceClient()
 
+    // Resolve poktan_id from user_id if needed
+    let poktanId = poktanIdParam
+    if (!poktanId && userId) {
+      const { data: poktan, error: poktanErr } = await supabase
+        .from('poktan')
+        .select('id')
+        .eq('ketua_id', userId)
+        .single()
+      if (poktanErr || !poktan) {
+        return NextResponse.json({ error: 'Poktan tidak ditemukan untuk user ini' }, { status: 404 })
+      }
+      poktanId = poktan.id
+    }
+
     const [poktanRes, anggotaRes, transaksiRes, qaRes, kontribusiRes] = await Promise.all([
-      supabase.from('poktan').select('*').eq('id', poktanId).single(),
-      supabase.from('anggota_poktan').select('*, petani:petani_id(id, nama_lengkap, no_hp)').eq('poktan_id', poktanId),
-      supabase.from('transaksi').select('*').eq('poktan_id', poktanId).order('created_at', { ascending: false }),
-      supabase.from('qa_inspeksi').select('*').eq('poktan_id', poktanId).order('created_at', { ascending: false }),
-      supabase.from('kontribusi_petani').select('*, petani:petani_id(nama_lengkap)').eq('transaksi_id', poktanId),
+      supabase.from('poktan').select('*').eq('id', poktanId!).single(),
+      supabase.from('anggota_poktan').select('*, petani:petani_id(id, nama_lengkap, no_hp)').eq('poktan_id', poktanId!),
+      supabase.from('transaksi').select('*').eq('poktan_id', poktanId!).order('created_at', { ascending: false }),
+      supabase.from('qa_inspeksi').select('*').eq('poktan_id', poktanId!).order('created_at', { ascending: false }),
+      supabase.from('kontribusi_petani').select('*, petani:petani_id(nama_lengkap)').eq('transaksi_id', poktanId!),
     ])
 
     // Get kontribusi for all poktan transactions

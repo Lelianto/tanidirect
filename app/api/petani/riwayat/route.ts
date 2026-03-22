@@ -3,9 +3,9 @@ import { createServiceClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   try {
-    const petaniId = request.nextUrl.searchParams.get('petani_id')
+    const petaniId = request.nextUrl.searchParams.get('petani_id') || request.nextUrl.searchParams.get('user_id')
     if (!petaniId) {
-      return NextResponse.json({ error: 'petani_id wajib diisi' }, { status: 400 })
+      return NextResponse.json({ error: 'petani_id atau user_id wajib diisi' }, { status: 400 })
     }
 
     const supabase = createServiceClient()
