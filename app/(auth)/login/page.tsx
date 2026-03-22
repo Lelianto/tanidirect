@@ -61,7 +61,7 @@ export default function LoginPage() {
             <Leaf className="h-8 w-8" />
           </div>
           <h1 className="text-2xl font-bold font-[family-name:var(--font-heading)] text-tani-green">
-            TaniDirect
+            taninesia
           </h1>
           <p className="text-sm text-muted-foreground">
             Marketplace Pertanian B2B — Demo Mode

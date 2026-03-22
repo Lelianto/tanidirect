@@ -296,8 +296,8 @@ export default function AdminKreditPage() {
                       <SelectValue placeholder="Pilih keputusan..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="setujui">Setujui</SelectItem>
-                      <SelectItem value="tolak">Tolak</SelectItem>
+                      <SelectItem value="setujui" label="Setujui">Setujui</SelectItem>
+                      <SelectItem value="tolak" label="Tolak">Tolak</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

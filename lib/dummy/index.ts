@@ -2,6 +2,7 @@ import type {
   User, Poktan, AnggotaPoktan, Supplier, PreOrder, Transaksi,
   KontribusiPetani, QAInspeksi, Logistik, Kredit, CicilanKredit,
   AnomaliLog, HargaHistoris, Notifikasi, PrediksiHarga, Pencairan,
+  KYCSubmission, Dispute, OnboardingMilestone, OnboardingChecklist, KatalogKomoditas,
 } from '@/types'
 
 // ============ USERS ============
@@ -119,7 +120,7 @@ export const dummyUsers: User[] = [
   {
     id: 'u-admin-01',
     role: 'admin',
-    nama_lengkap: 'Admin TaniDirect',
+    nama_lengkap: 'Admin taninesia',
     no_hp: '081200000001',
     provinsi: 'DKI Jakarta',
     kabupaten: 'Jakarta Pusat',
@@ -823,6 +824,327 @@ export function getKontribusiByPetaniId(petaniId: string) {
 export function getKreditByPetaniId(petaniId: string) {
   return dummyKredit.filter(k => k.petani_id === petaniId)
 }
+
+// ============ KYC SUBMISSIONS ============
+export const dummyKYCSubmissions: KYCSubmission[] = [
+  {
+    id: 'kyc-01',
+    user_id: 'u-ketua-01',
+    user_nama: 'Pak Surya Wijaya',
+    user_role: 'ketua_poktan',
+    layer: 1,
+    trust_level: 'verified',
+    documents: [
+      { id: 'doc-01', nama: 'KTP', status: 'approved', uploaded_at: '2026-01-20T08:00:00Z' },
+      { id: 'doc-02', nama: 'Foto Selfie + KTP', status: 'approved', uploaded_at: '2026-01-20T08:05:00Z' },
+      { id: 'doc-03', nama: 'No. HP Terverifikasi', status: 'approved', uploaded_at: '2026-01-20T08:00:00Z' },
+    ],
+    status: 'approved',
+    reviewer_id: 'u-admin-01',
+    reviewer_catatan: 'Dokumen lengkap dan valid',
+    submitted_at: '2026-01-20T08:00:00Z',
+    reviewed_at: '2026-01-21T10:00:00Z',
+  },
+  {
+    id: 'kyc-02',
+    user_id: 'u-ketua-01',
+    user_nama: 'Pak Surya Wijaya',
+    user_role: 'ketua_poktan',
+    layer: 2,
+    trust_level: 'bronze',
+    documents: [
+      { id: 'doc-04', nama: 'Surat Keterangan Domisili', status: 'approved', uploaded_at: '2026-02-01T08:00:00Z' },
+      { id: 'doc-05', nama: 'SK Poktan dari Dinas Pertanian', status: 'approved', uploaded_at: '2026-02-01T08:10:00Z' },
+      { id: 'doc-06', nama: 'Foto Lahan', status: 'approved', uploaded_at: '2026-02-01T08:15:00Z' },
+    ],
+    status: 'approved',
+    reviewer_id: 'u-admin-01',
+    submitted_at: '2026-02-01T08:00:00Z',
+    reviewed_at: '2026-02-02T14:00:00Z',
+  },
+  {
+    id: 'kyc-03',
+    user_id: 'u-ketua-01',
+    user_nama: 'Pak Surya Wijaya',
+    user_role: 'ketua_poktan',
+    layer: 3,
+    trust_level: 'silver',
+    documents: [
+      { id: 'doc-07', nama: 'Rekening Bank atas Nama Poktan', status: 'pending', uploaded_at: '2026-03-10T08:00:00Z' },
+      { id: 'doc-08', nama: 'Sertifikat Pelatihan QA', status: 'pending', uploaded_at: '2026-03-10T08:05:00Z' },
+    ],
+    status: 'pending',
+    submitted_at: '2026-03-10T08:00:00Z',
+  },
+  {
+    id: 'kyc-04',
+    user_id: 'u-supplier-01',
+    user_nama: 'Rini Hartono',
+    user_role: 'supplier',
+    layer: 1,
+    trust_level: 'verified',
+    documents: [
+      { id: 'doc-09', nama: 'KTP Pemilik', status: 'approved', uploaded_at: '2026-01-22T08:00:00Z' },
+      { id: 'doc-10', nama: 'SIUP/NIB', status: 'approved', uploaded_at: '2026-01-22T08:05:00Z' },
+      { id: 'doc-11', nama: 'NPWP Perusahaan', status: 'approved', uploaded_at: '2026-01-22T08:10:00Z' },
+    ],
+    status: 'approved',
+    reviewer_id: 'u-admin-01',
+    submitted_at: '2026-01-22T08:00:00Z',
+    reviewed_at: '2026-01-23T10:00:00Z',
+  },
+  {
+    id: 'kyc-05',
+    user_id: 'u-supplier-01',
+    user_nama: 'Rini Hartono',
+    user_role: 'supplier',
+    layer: 2,
+    trust_level: 'bronze',
+    documents: [
+      { id: 'doc-12', nama: 'Rekening Perusahaan', status: 'pending', uploaded_at: '2026-03-15T08:00:00Z' },
+      { id: 'doc-13', nama: 'Surat Referensi Bank', status: 'pending', uploaded_at: '2026-03-15T08:05:00Z' },
+    ],
+    status: 'pending',
+    submitted_at: '2026-03-15T08:00:00Z',
+  },
+  {
+    id: 'kyc-08',
+    user_id: 'u-petani-01',
+    user_nama: 'Ahmad Hidayat',
+    user_role: 'petani',
+    layer: 1,
+    trust_level: 'verified',
+    documents: [
+      { id: 'doc-18', nama: 'KTP', status: 'approved', uploaded_at: '2026-02-10T08:00:00Z' },
+      { id: 'doc-19', nama: 'Foto Selfie + KTP', status: 'approved', uploaded_at: '2026-02-10T08:05:00Z' },
+      { id: 'doc-20', nama: 'No. HP Terverifikasi', status: 'approved', uploaded_at: '2026-02-10T08:00:00Z' },
+    ],
+    status: 'approved',
+    reviewer_id: 'u-admin-01',
+    reviewer_catatan: 'Identitas terverifikasi',
+    submitted_at: '2026-02-10T08:00:00Z',
+    reviewed_at: '2026-02-11T10:00:00Z',
+  },
+  {
+    id: 'kyc-06',
+    user_id: 'u-petani-05',
+    user_nama: 'Eko Prasetyo',
+    user_role: 'petani',
+    layer: 1,
+    trust_level: 'unverified',
+    documents: [
+      { id: 'doc-14', nama: 'KTP', status: 'revisi', catatan: 'Foto buram, mohon upload ulang', uploaded_at: '2026-03-18T08:00:00Z' },
+      { id: 'doc-15', nama: 'Foto Selfie + KTP', status: 'pending', uploaded_at: '2026-03-18T08:05:00Z' },
+    ],
+    status: 'revisi',
+    reviewer_id: 'u-admin-01',
+    reviewer_catatan: 'KTP tidak terbaca jelas, mohon foto ulang dengan pencahayaan baik',
+    submitted_at: '2026-03-18T08:00:00Z',
+    reviewed_at: '2026-03-19T09:00:00Z',
+  },
+  {
+    id: 'kyc-07',
+    user_id: 'u-supplier-02',
+    user_nama: 'Hendro Wibowo',
+    user_role: 'supplier',
+    layer: 1,
+    trust_level: 'unverified',
+    documents: [
+      { id: 'doc-16', nama: 'KTP Pemilik', status: 'rejected', catatan: 'KTP sudah expired', uploaded_at: '2026-03-01T08:00:00Z' },
+      { id: 'doc-17', nama: 'SIUP/NIB', status: 'pending', uploaded_at: '2026-03-01T08:05:00Z' },
+    ],
+    status: 'rejected',
+    reviewer_id: 'u-admin-01',
+    reviewer_catatan: 'KTP sudah tidak berlaku, mohon gunakan KTP yang masih aktif',
+    submitted_at: '2026-03-01T08:00:00Z',
+    reviewed_at: '2026-03-02T11:00:00Z',
+  },
+]
+
+// ============ DISPUTES ============
+export const dummyDisputes: Dispute[] = [
+  {
+    id: 'dsp-01',
+    transaksi_id: 'tx-04',
+    pelapor_id: 'u-supplier-02',
+    pelapor_nama: 'CV Mitra Pangan Timur',
+    pelapor_role: 'supplier',
+    terlapor_id: 'u-ketua-01',
+    terlapor_nama: 'Poktan Mekar Tani',
+    kategori: 'kualitas',
+    deskripsi: 'Tomat yang diterima 30% berukuran kecil tidak sesuai grade A. Banyak yang sudah mulai lembek.',
+    bukti: [
+      { id: 'ev-01', tipe: 'foto', url: '/demo/dispute-tomat-1.jpg', deskripsi: 'Foto tomat berukuran kecil', uploaded_by: 'CV Mitra Pangan Timur', uploaded_at: '2026-02-21T08:00:00Z' },
+      { id: 'ev-02', tipe: 'foto', url: '/demo/dispute-tomat-2.jpg', deskripsi: 'Foto tomat lembek', uploaded_by: 'CV Mitra Pangan Timur', uploaded_at: '2026-02-21T08:05:00Z' },
+    ],
+    timeline: [
+      { id: 'tl-01', aksi: 'Dispute diajukan', oleh: 'CV Mitra Pangan Timur', created_at: '2026-02-21T08:00:00Z' },
+      { id: 'tl-02', aksi: 'Investigasi dimulai', oleh: 'Admin taninesia', catatan: 'Meminta foto QA dari poktan', created_at: '2026-02-21T10:00:00Z' },
+      { id: 'tl-03', aksi: 'Bukti QA diterima', oleh: 'Poktan Mekar Tani', catatan: 'Mengirim foto inspeksi awal', created_at: '2026-02-21T14:00:00Z' },
+    ],
+    status: 'mediasi',
+    sla_deadline: '2026-02-24T08:00:00Z',
+    created_at: '2026-02-21T08:00:00Z',
+    updated_at: '2026-02-21T14:00:00Z',
+  },
+  {
+    id: 'dsp-02',
+    transaksi_id: 'tx-02',
+    pelapor_id: 'u-supplier-02',
+    pelapor_nama: 'CV Mitra Pangan Timur',
+    pelapor_role: 'supplier',
+    terlapor_id: 'u-petani-03',
+    terlapor_nama: 'Poktan Sari Bumi',
+    kategori: 'keterlambatan',
+    deskripsi: 'Pengiriman kubis terlambat 2 hari dari jadwal estimasi.',
+    bukti: [
+      { id: 'ev-03', tipe: 'dokumen', url: '/demo/dispute-surat.pdf', deskripsi: 'Screenshot tracking pengiriman', uploaded_by: 'CV Mitra Pangan Timur', uploaded_at: '2026-03-22T08:00:00Z' },
+    ],
+    timeline: [
+      { id: 'tl-04', aksi: 'Dispute diajukan', oleh: 'CV Mitra Pangan Timur', created_at: '2026-03-22T08:00:00Z' },
+    ],
+    status: 'diajukan',
+    sla_deadline: '2026-03-25T08:00:00Z',
+    created_at: '2026-03-22T08:00:00Z',
+    updated_at: '2026-03-22T08:00:00Z',
+  },
+  {
+    id: 'dsp-03',
+    transaksi_id: 'tx-05',
+    pelapor_id: 'u-supplier-01',
+    pelapor_nama: 'PT Segar Nusantara',
+    pelapor_role: 'supplier',
+    terlapor_id: 'u-ketua-01',
+    terlapor_nama: 'Poktan Mekar Tani',
+    kategori: 'volume',
+    deskripsi: 'Volume cabai merah yang diterima hanya 1.480 kg dari estimasi 1.500 kg (kekurangan 1.3%). Masih dalam toleransi tapi ingin dikonfirmasi.',
+    bukti: [
+      { id: 'ev-04', tipe: 'dokumen', url: '/demo/dispute-timbang.jpg', deskripsi: 'Foto timbangan di gudang', uploaded_by: 'PT Segar Nusantara', uploaded_at: '2026-01-29T08:00:00Z' },
+    ],
+    timeline: [
+      { id: 'tl-05', aksi: 'Dispute diajukan', oleh: 'PT Segar Nusantara', created_at: '2026-01-29T08:00:00Z' },
+      { id: 'tl-06', aksi: 'Investigasi dimulai', oleh: 'Admin taninesia', created_at: '2026-01-29T10:00:00Z' },
+      { id: 'tl-07', aksi: 'Resolved - Dalam toleransi', oleh: 'Admin taninesia', catatan: 'Kekurangan 1.3% masih dalam toleransi 5%. Dispute ditutup.', created_at: '2026-01-30T09:00:00Z' },
+    ],
+    status: 'selesai',
+    sla_deadline: '2026-02-01T08:00:00Z',
+    resolusi: 'Kekurangan volume 1.3% masih dalam toleransi 5% sesuai SOP. Tidak ada kompensasi.',
+    kompensasi: 0,
+    created_at: '2026-01-29T08:00:00Z',
+    updated_at: '2026-01-30T09:00:00Z',
+  },
+  {
+    id: 'dsp-04',
+    transaksi_id: 'tx-03',
+    pelapor_id: 'u-ketua-01',
+    pelapor_nama: 'Poktan Mekar Tani',
+    pelapor_role: 'ketua_poktan',
+    terlapor_id: 'u-supplier-01',
+    terlapor_nama: 'PT Segar Nusantara',
+    kategori: 'pembayaran',
+    deskripsi: 'Pencairan pembayaran wortel ke petani terlambat 2 hari dari jadwal.',
+    bukti: [
+      { id: 'ev-05', tipe: 'catatan', url: '', deskripsi: 'Seharusnya cair 10 Maret, baru cair 12 Maret', uploaded_by: 'Poktan Mekar Tani', uploaded_at: '2026-03-12T10:00:00Z' },
+    ],
+    timeline: [
+      { id: 'tl-08', aksi: 'Dispute diajukan', oleh: 'Poktan Mekar Tani', created_at: '2026-03-12T10:00:00Z' },
+      { id: 'tl-09', aksi: 'Investigasi dimulai', oleh: 'Admin taninesia', catatan: 'Memeriksa log pencairan', created_at: '2026-03-12T11:00:00Z' },
+      { id: 'tl-10', aksi: 'Eskalasi ke Manager', oleh: 'Admin taninesia', catatan: 'Keterlambatan disebabkan error sistem', created_at: '2026-03-12T14:00:00Z' },
+      { id: 'tl-11', aksi: 'Resolved - Kompensasi diberikan', oleh: 'Ops Manager', catatan: 'Kompensasi bunga 0.1%/hari x 2 hari = Rp 59.000', created_at: '2026-03-13T10:00:00Z' },
+    ],
+    status: 'selesai',
+    sla_deadline: '2026-03-15T10:00:00Z',
+    resolusi: 'Keterlambatan disebabkan error sistem payment gateway. Kompensasi bunga 0.2% telah ditransfer.',
+    kompensasi: 59000,
+    created_at: '2026-03-12T10:00:00Z',
+    updated_at: '2026-03-13T10:00:00Z',
+  },
+]
+
+// ============ ONBOARDING MILESTONES ============
+export const dummyOnboardingMilestones: OnboardingMilestone[] = [
+  // Phase 1: Seeded (Day 1-30)
+  { id: 'om-01', phase: 1, nama: 'Poktan Terdaftar', deskripsi: 'Jumlah poktan yang mendaftar dan terverifikasi', target: 10, current: 7, unit: 'poktan', status: 'in_progress' },
+  { id: 'om-02', phase: 1, nama: 'Supplier Terdaftar', deskripsi: 'Jumlah supplier yang mendaftar dan deposit escrow', target: 5, current: 3, unit: 'supplier', status: 'in_progress' },
+  { id: 'om-03', phase: 1, nama: 'Petani Terdaftar', deskripsi: 'Total petani individu yang tergabung di poktan', target: 50, current: 25, unit: 'petani', status: 'in_progress' },
+  { id: 'om-04', phase: 1, nama: 'Pre-Order Pertama', deskripsi: 'Pre-order pertama berhasil di-match', target: 1, current: 1, unit: 'transaksi', status: 'tercapai' },
+  // Phase 2: Earned (Day 31-60)
+  { id: 'om-05', phase: 2, nama: 'Transaksi Selesai', deskripsi: 'Transaksi end-to-end pertama selesai', target: 10, current: 5, unit: 'transaksi', status: 'in_progress' },
+  { id: 'om-06', phase: 2, nama: 'QA Skor Rata-rata', deskripsi: 'Rata-rata skor QA semua poktan', target: 80, current: 76, unit: 'skor', status: 'in_progress' },
+  { id: 'om-07', phase: 2, nama: 'Repeat Order', deskripsi: 'Supplier melakukan repeat order', target: 3, current: 1, unit: 'supplier', status: 'in_progress' },
+  // Phase 3: Network (Day 61-90)
+  { id: 'om-08', phase: 3, nama: 'GMV Bulanan', deskripsi: 'Total nilai transaksi per bulan', target: 500000000, current: 265740000, unit: 'rupiah', status: 'in_progress' },
+  { id: 'om-09', phase: 3, nama: 'Wilayah Aktif', deskripsi: 'Jumlah kabupaten/kota dengan transaksi aktif', target: 5, current: 2, unit: 'wilayah', status: 'belum' },
+  { id: 'om-10', phase: 3, nama: 'Referral Poktan', deskripsi: 'Poktan baru dari referral poktan existing', target: 5, current: 0, unit: 'poktan', status: 'belum' },
+]
+
+// ============ ONBOARDING CHECKLIST ============
+export const dummyOnboardingChecklist: OnboardingChecklist[] = [
+  { id: 'oc-01', kategori: 'Infrastruktur', item: 'Server production deployed', is_done: true, pic: 'CTO' },
+  { id: 'oc-02', kategori: 'Infrastruktur', item: 'Payment gateway terintegrasi', is_done: true, pic: 'CTO' },
+  { id: 'oc-03', kategori: 'Infrastruktur', item: 'SMS/WhatsApp gateway aktif', is_done: true, pic: 'CTO' },
+  { id: 'oc-04', kategori: 'Operasional', item: 'SOP dispute resolution final', is_done: true, pic: 'COO' },
+  { id: 'oc-05', kategori: 'Operasional', item: 'Tim CS terlatih (min 3 orang)', is_done: true, pic: 'COO' },
+  { id: 'oc-06', kategori: 'Operasional', item: 'Partner logistik MoU ditandatangani', is_done: false, pic: 'COO' },
+  { id: 'oc-07', kategori: 'Marketing', item: 'Landing page & materi sosialisasi', is_done: true, pic: 'CMO' },
+  { id: 'oc-08', kategori: 'Marketing', item: 'Roadshow ke 10 poktan target', is_done: false, pic: 'CMO' },
+  { id: 'oc-09', kategori: 'Marketing', item: 'Onboarding supplier anchor (min 2)', is_done: true, pic: 'CMO' },
+  { id: 'oc-10', kategori: 'Legal', item: 'Terms of Service final', is_done: true, pic: 'Legal' },
+  { id: 'oc-11', kategori: 'Legal', item: 'Perjanjian escrow dengan bank partner', is_done: false, pic: 'Legal' },
+  { id: 'oc-12', kategori: 'Finance', item: 'Budget Fase 1 disetujui', is_done: true, pic: 'CFO' },
+]
+
+// ============ SMART CATALOG ============
+export const dummyKatalogKomoditas: KatalogKomoditas[] = [
+  {
+    id: 'kat-01', nama: 'Tomat', grade: 'A', harga_per_kg: 12000, volume_tersedia_kg: 5000,
+    poktan_nama: 'Poktan Mekar Tani', poktan_id: 'pk-01', wilayah: 'Jawa Barat',
+    jadwal_panen: '2026-04-10', skor_kualitas: 88, skor_ketepatan: 92, skor_volume: 85, skor_harga: 78,
+    margin_persen: 15,
+  },
+  {
+    id: 'kat-02', nama: 'Cabai Merah', grade: 'A', harga_per_kg: 45000, volume_tersedia_kg: 2000,
+    poktan_nama: 'Poktan Mekar Tani', poktan_id: 'pk-01', wilayah: 'Jawa Barat',
+    jadwal_panen: '2026-04-05', skor_kualitas: 91, skor_ketepatan: 90, skor_volume: 80, skor_harga: 72,
+    margin_persen: 12,
+  },
+  {
+    id: 'kat-03', nama: 'Kubis', grade: 'B', harga_per_kg: 6000, volume_tersedia_kg: 8000,
+    poktan_nama: 'Poktan Sari Bumi', poktan_id: 'pk-02', wilayah: 'Jawa Barat',
+    jadwal_panen: '2026-04-15', skor_kualitas: 78, skor_ketepatan: 85, skor_volume: 90, skor_harga: 88,
+    margin_persen: 20,
+  },
+  {
+    id: 'kat-04', nama: 'Wortel', grade: 'A', harga_per_kg: 10000, volume_tersedia_kg: 3000,
+    poktan_nama: 'Poktan Mekar Tani', poktan_id: 'pk-01', wilayah: 'Jawa Barat',
+    jadwal_panen: '2026-04-20', skor_kualitas: 91, skor_ketepatan: 92, skor_volume: 88, skor_harga: 82,
+    margin_persen: 18,
+  },
+  {
+    id: 'kat-05', nama: 'Kentang', grade: 'A', harga_per_kg: 15000, volume_tersedia_kg: 4000,
+    poktan_nama: 'Poktan Sari Bumi', poktan_id: 'pk-02', wilayah: 'Jawa Barat',
+    jadwal_panen: '2026-04-25', skor_kualitas: 82, skor_ketepatan: 80, skor_volume: 85, skor_harga: 75,
+    margin_persen: 14,
+  },
+  {
+    id: 'kat-06', nama: 'Bawang Merah', grade: 'B', harga_per_kg: 30000, volume_tersedia_kg: 2500,
+    poktan_nama: 'Poktan Maju Jaya', poktan_id: 'pk-03', wilayah: 'Jawa Timur',
+    jadwal_panen: '2026-04-30', skor_kualitas: 65, skor_ketepatan: 70, skor_volume: 75, skor_harga: 85,
+    margin_persen: 22,
+  },
+  {
+    id: 'kat-07', nama: 'Brokoli', grade: 'A', harga_per_kg: 18000, volume_tersedia_kg: 1500,
+    poktan_nama: 'Poktan Sari Bumi', poktan_id: 'pk-02', wilayah: 'Jawa Barat',
+    jadwal_panen: '2026-04-12', skor_kualitas: 85, skor_ketepatan: 88, skor_volume: 70, skor_harga: 68,
+    margin_persen: 16,
+  },
+  {
+    id: 'kat-08', nama: 'Cabai Rawit', grade: 'A', harga_per_kg: 55000, volume_tersedia_kg: 1000,
+    poktan_nama: 'Poktan Maju Jaya', poktan_id: 'pk-03', wilayah: 'Jawa Timur',
+    jadwal_panen: '2026-05-01', skor_kualitas: 70, skor_ketepatan: 68, skor_volume: 65, skor_harga: 90,
+    margin_persen: 25,
+  },
+]
 
 // Current demo user (simulated auth)
 export const DEMO_USERS = {

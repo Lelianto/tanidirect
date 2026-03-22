@@ -6,7 +6,7 @@ import { StatCard } from '@/components/shared/StatCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { CairkanDialog } from '@/components/petani/CairkanDialog'
 import { useAuthStore } from '@/store'
@@ -155,7 +155,7 @@ export default function PetaniRiwayatPage() {
         <div className="flex items-center gap-2">
           <Select value={filterMonth} onValueChange={(v: string | null) => setFilterMonth(v ?? '')}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter bulan" />
+              <span>{MONTHS.find((m) => m.value === filterMonth)?.label ?? 'Filter bulan'}</span>
             </SelectTrigger>
             <SelectContent>
               {MONTHS.map((m) => (

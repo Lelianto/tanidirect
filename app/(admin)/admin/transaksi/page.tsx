@@ -17,8 +17,15 @@ import {
 } from 'lucide-react'
 
 const STATUS_OPTIONS = [
-  'Semua Status', 'draft', 'menunggu_konfirmasi', 'dikonfirmasi',
-  'dalam_pengiriman', 'tiba_di_gudang', 'selesai', 'dibatalkan', 'sengketa',
+  { value: 'Semua Status', label: 'Semua Status' },
+  { value: 'draft', label: 'Draft' },
+  { value: 'menunggu_konfirmasi', label: 'Menunggu Konfirmasi' },
+  { value: 'dikonfirmasi', label: 'Dikonfirmasi' },
+  { value: 'dalam_pengiriman', label: 'Dalam Pengiriman' },
+  { value: 'tiba_di_gudang', label: 'Tiba di Gudang' },
+  { value: 'selesai', label: 'Selesai' },
+  { value: 'dibatalkan', label: 'Dibatalkan' },
+  { value: 'sengketa', label: 'Sengketa' },
 ]
 const KOMODITAS_OPTIONS = ['Semua Komoditas', 'Tomat', 'Cabai Merah', 'Kubis', 'Wortel', 'Kentang']
 
@@ -78,7 +85,7 @@ export default function AdminTransaksiPage() {
             </SelectTrigger>
             <SelectContent>
               {STATUS_OPTIONS.map((o) => (
-                <SelectItem key={o} value={o}>{o === 'Semua Status' ? o : o.replace(/_/g, ' ')}</SelectItem>
+                <SelectItem key={o.value} value={o.value} label={o.label}>{o.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>

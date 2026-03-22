@@ -1,5 +1,5 @@
 {
-  "name": "tanidirect",
+  "name": "taninesia",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
+    "@didit-protocol/sdk-web": "^0.1.8",
     "@hookform/resolvers": "^5.2.2",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.99.3",

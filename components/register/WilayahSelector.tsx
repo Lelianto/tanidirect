@@ -192,7 +192,7 @@ function WilayahSelector({ value, onChange, showDesa = false, errors }: WilayahS
             className={`w-full ${errors?.provinsi ? 'border-destructive' : ''}`}
           >
             <SelectValue placeholder={loading.prov ? 'Memuat...' : 'Pilih provinsi'}>
-              {provId ? provinces.find((p) => p.id === provId)?.name ?? provId : null}
+              {provId ? provinces.find((p) => p.id === provId)?.name ?? 'Memuat...' : null}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
@@ -230,7 +230,7 @@ function WilayahSelector({ value, onChange, showDesa = false, errors }: WilayahS
                     : 'Pilih kabupaten/kota'
               }
             >
-              {regId ? regencies.find((r) => r.id === regId)?.name ?? regId : null}
+              {regId ? regencies.find((r) => r.id === regId)?.name ?? 'Memuat...' : null}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
@@ -266,7 +266,7 @@ function WilayahSelector({ value, onChange, showDesa = false, errors }: WilayahS
                     : 'Pilih kecamatan'
               }
             >
-              {distId ? districts.find((d) => d.id === distId)?.name ?? distId : null}
+              {distId ? districts.find((d) => d.id === distId)?.name ?? 'Memuat...' : null}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>

@@ -40,9 +40,13 @@ export default function InspeksiPage({ params }: { params: Promise<{ txId: strin
   const [volumeSampel, setVolumeSampel] = useState('')
   const [results, setResults] = useState<Record<number, { lulus: boolean | null; catatan: string }>>({})
   const [gradePilihan, setGradePilihan] = useState('')
-  const [fotoBatch, setFotoBatch] = useState(false)
-  const [fotoDetail, setFotoDetail] = useState(false)
-  const [fotoTimbangan, setFotoTimbangan] = useState(false)
+  const [fotoFiles, setFotoFiles] = useState<Record<string, File | null>>({ batch: null, detail: null, timbangan: null })
+  const [fotoPreviews, setFotoPreviews] = useState<Record<string, string>>({})
+
+  const fotoBatch = !!fotoFiles.batch
+  const fotoDetail = !!fotoFiles.detail
+  const fotoTimbangan = !!fotoFiles.timbangan
+  const allFotosUploaded = fotoBatch && fotoDetail && fotoTimbangan
   const [catatanTambahan, setCatatanTambahan] = useState('')
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null)
@@ -64,6 +68,35 @@ export default function InspeksiPage({ params }: { params: Promise<{ txId: strin
 
   const isOverride = autoGradeResult?.isComplete && gradePilihan && gradePilihan !== autoGradeResult.grade
 
+  // Handle foto upload
+  function handleFotoUpload(key: string, file: File | null) {
+    // Revoke old preview URL to avoid memory leaks
+    if (fotoPreviews[key]) {
+      URL.revokeObjectURL(fotoPreviews[key])
+    }
+    setFotoFiles((prev) => ({ ...prev, [key]: file }))
+    if (file) {
+      const previewUrl = URL.createObjectURL(file)
+      setFotoPreviews((prev) => ({ ...prev, [key]: previewUrl }))
+    } else {
+      setFotoPreviews((prev) => {
+        const next = { ...prev }
+        delete next[key]
+        return next
+      })
+    }
+  }
+
+  // Cleanup preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(fotoPreviews).forEach((url) => {
+        if (url) URL.revokeObjectURL(url)
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Load draft on mount
   useEffect(() => {
     if (!tx || !form) return
@@ -72,9 +105,7 @@ export default function InspeksiPage({ params }: { params: Promise<{ txId: strin
       setVolumeSampel(draft.volume_sampel)
       setResults(draft.results)
       setGradePilihan(draft.grade_pilihan)
-      setFotoBatch(draft.foto_batch)
-      setFotoDetail(draft.foto_detail)
-      setFotoTimbangan(draft.foto_timbangan)
+      // foto_batch/detail/timbangan from draft are booleans — files can't be restored from localStorage
       setCatatanTambahan(draft.catatan_tambahan)
       setDraftSavedAt(draft.updated_at)
       if (draft.grade_override_reason) setGradeOverrideReason(draft.grade_override_reason)
@@ -181,7 +212,7 @@ export default function InspeksiPage({ params }: { params: Promise<{ txId: strin
   function canSubmit(): boolean {
     const { filled, total } = getTotalProgress()
     const hasOverrideReason = !isOverride || gradeOverrideReason.trim().length > 0
-    return filled === total && !!gradePilihan && !!volumeSampel && hasOverrideReason
+    return filled === total && !!gradePilihan && !!volumeSampel && allFotosUploaded && hasOverrideReason
   }
 
   function handleSubmit() {
@@ -547,27 +578,79 @@ export default function InspeksiPage({ params }: { params: Promise<{ txId: strin
             <CardTitle className="text-xs font-semibold flex items-center gap-1.5">
               <Camera className="h-3.5 w-3.5" />
               Dokumentasi Foto (min. 3 foto)
+              {allFotosUploaded && (
+                <Badge className="text-[9px] px-1.5 py-0 bg-emerald-100 text-emerald-700 border-emerald-200 ml-1">
+                  Lengkap
+                </Badge>
+              )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-4 pb-4 space-y-2">
+          <CardContent className="px-4 pb-4 space-y-3">
             {[
-              { key: 'batch' as const, label: 'Tampilan keseluruhan batch', value: fotoBatch, set: setFotoBatch },
-              { key: 'detail' as const, label: 'Detail kualitas / cacat (close-up)', value: fotoDetail, set: setFotoDetail },
-              { key: 'timbangan' as const, label: 'Label timbangan / berat', value: fotoTimbangan, set: setFotoTimbangan },
-            ].map((item) => (
-              <label key={item.key} className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 cursor-pointer hover:bg-muted/30 transition-colors">
-                <input
-                  type="checkbox"
-                  checked={item.value}
-                  onChange={(e) => item.set(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 accent-tani-green"
-                />
-                <span className="text-xs">{item.label}</span>
-              </label>
-            ))}
-            <p className="text-[10px] text-muted-foreground mt-1">
-              Centang setelah foto diupload ke aplikasi TaniDirect
-            </p>
+              { key: 'batch', label: 'Tampilan keseluruhan batch', desc: 'Foto seluruh batch komoditas dari jarak jauh' },
+              { key: 'detail', label: 'Detail kualitas / cacat (close-up)', desc: 'Foto close-up permukaan, warna, dan cacat' },
+              { key: 'timbangan', label: 'Label timbangan / berat', desc: 'Foto layar timbangan yang menunjukkan berat' },
+            ].map((item) => {
+              const file = fotoFiles[item.key]
+              const preview = fotoPreviews[item.key]
+              return (
+                <div key={item.key} className={`rounded-lg border transition-all ${file ? 'border-emerald-300 bg-emerald-50/50' : 'border-gray-200'}`}>
+                  <div className="flex items-start gap-3 p-3">
+                    {/* Status indicator */}
+                    <div className={`mt-0.5 shrink-0 h-5 w-5 rounded-full flex items-center justify-center ${file ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                      {file ? <CheckCircle className="h-3.5 w-3.5" /> : <Camera className="h-3 w-3" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium">{item.label}</p>
+                      <p className="text-[10px] text-muted-foreground">{item.desc}</p>
+
+                      {/* Preview */}
+                      {preview && (
+                        <div className="mt-2 relative inline-block">
+                          <img
+                            src={preview}
+                            alt={item.label}
+                            className="h-20 w-auto rounded-lg object-cover border border-emerald-200"
+                          />
+                          <button
+                            type="button"
+                            className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+                            onClick={() => handleFotoUpload(item.key, null)}
+                          >
+                            <XCircle className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Upload button */}
+                      {!file && (
+                        <label className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-gray-300 bg-white text-xs text-muted-foreground cursor-pointer hover:border-tani-green hover:text-tani-green transition-colors">
+                          <Camera className="h-3.5 w-3.5" />
+                          Pilih Foto
+                          <input
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            className="hidden"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0] || null
+                              handleFotoUpload(item.key, f)
+                              e.target.value = ''
+                            }}
+                          />
+                        </label>
+                      )}
+
+                      {file && (
+                        <p className="text-[10px] text-emerald-600 mt-1 truncate">
+                          {file.name} ({(file.size / 1024).toFixed(0)} KB)
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </CardContent>
         </Card>
 

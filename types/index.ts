@@ -330,3 +330,113 @@ export interface NavItem {
   href: string
   icon: string
 }
+
+// ============ KYC ============
+export type TrustLevel = 'unverified' | 'verified' | 'bronze' | 'silver' | 'gold' | 'platinum'
+export type KYCLayerStatus = 'belum' | 'pending' | 'approved' | 'rejected' | 'revisi'
+
+export interface KYCDocument {
+  id: string
+  nama: string
+  status: KYCLayerStatus
+  catatan?: string
+  uploaded_at?: string
+}
+
+export interface KYCSubmission {
+  id: string
+  user_id: string
+  user_nama: string
+  user_role: UserRole
+  layer: 1 | 2 | 3
+  trust_level: TrustLevel
+  documents: KYCDocument[]
+  status: KYCLayerStatus
+  reviewer_id?: string
+  reviewer_catatan?: string
+  submitted_at: string
+  reviewed_at?: string
+}
+
+// ============ DISPUTE ============
+export type DisputeCategory = 'kualitas' | 'keterlambatan' | 'volume' | 'pembayaran' | 'pembatalan'
+export type DisputeStatus = 'diajukan' | 'investigasi' | 'mediasi' | 'eskalasi' | 'selesai'
+
+export interface DisputeEvidence {
+  id: string
+  tipe: 'foto' | 'dokumen' | 'catatan'
+  url: string
+  deskripsi: string
+  uploaded_by: string
+  uploaded_at: string
+}
+
+export interface DisputeTimeline {
+  id: string
+  aksi: string
+  oleh: string
+  catatan?: string
+  created_at: string
+}
+
+export interface Dispute {
+  id: string
+  transaksi_id: string
+  pelapor_id: string
+  pelapor_nama: string
+  pelapor_role: UserRole
+  terlapor_id: string
+  terlapor_nama: string
+  kategori: DisputeCategory
+  deskripsi: string
+  bukti: DisputeEvidence[]
+  timeline: DisputeTimeline[]
+  status: DisputeStatus
+  sla_deadline: string
+  resolusi?: string
+  kompensasi?: number
+  created_at: string
+  updated_at: string
+}
+
+// ============ ONBOARDING ============
+export type OnboardingPhase = 1 | 2 | 3
+export type OnboardingMilestoneStatus = 'belum' | 'in_progress' | 'tercapai'
+
+export interface OnboardingMilestone {
+  id: string
+  phase: OnboardingPhase
+  nama: string
+  deskripsi: string
+  target: number
+  current: number
+  unit: string
+  status: OnboardingMilestoneStatus
+}
+
+export interface OnboardingChecklist {
+  id: string
+  kategori: string
+  item: string
+  is_done: boolean
+  pic?: string
+}
+
+// ============ SMART CATALOG ============
+export interface KatalogKomoditas {
+  id: string
+  nama: string
+  grade: KomoditasGrade
+  harga_per_kg: number
+  volume_tersedia_kg: number
+  poktan_nama: string
+  poktan_id: string
+  wilayah: string
+  jadwal_panen: string
+  skor_kualitas: number
+  skor_ketepatan: number
+  skor_volume: number
+  skor_harga: number
+  margin_persen: number
+  foto_url?: string
+}

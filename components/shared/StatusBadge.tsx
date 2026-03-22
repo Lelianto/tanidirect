@@ -36,6 +36,32 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   // Bayar
   dibayar: { label: 'Dibayar', className: 'bg-green-100 text-green-800 hover:bg-green-100' },
   belum_bayar: { label: 'Belum Bayar', className: 'bg-amber-100 text-amber-800 hover:bg-amber-100' },
+  // KYC
+  belum: { label: 'Belum', className: 'bg-slate-100 text-slate-700 hover:bg-slate-100' },
+  approved: { label: 'Disetujui', className: 'bg-green-100 text-green-800 hover:bg-green-100' },
+  rejected: { label: 'Ditolak', className: 'bg-red-100 text-red-800 hover:bg-red-100' },
+  revisi: { label: 'Revisi', className: 'bg-amber-100 text-amber-800 hover:bg-amber-100' },
+  // Trust Level
+  unverified: { label: 'Unverified', className: 'bg-slate-100 text-slate-700 hover:bg-slate-100' },
+  verified: { label: 'Verified', className: 'bg-blue-100 text-blue-800 hover:bg-blue-100' },
+  bronze: { label: 'Bronze', className: 'bg-orange-100 text-orange-800 hover:bg-orange-100' },
+  silver: { label: 'Silver', className: 'bg-gray-200 text-gray-800 hover:bg-gray-200' },
+  gold: { label: 'Gold', className: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100' },
+  platinum: { label: 'Platinum', className: 'bg-indigo-100 text-indigo-800 hover:bg-indigo-100' },
+  // Dispute
+  diajukan: { label: 'Diajukan', className: 'bg-amber-100 text-amber-800 hover:bg-amber-100' },
+  investigasi: { label: 'Investigasi', className: 'bg-blue-100 text-blue-800 hover:bg-blue-100' },
+  mediasi: { label: 'Mediasi', className: 'bg-purple-100 text-purple-800 hover:bg-purple-100' },
+  eskalasi: { label: 'Eskalasi', className: 'bg-red-100 text-red-800 hover:bg-red-100' },
+  // Onboarding
+  in_progress: { label: 'Berjalan', className: 'bg-blue-100 text-blue-800 hover:bg-blue-100' },
+  tercapai: { label: 'Tercapai', className: 'bg-green-100 text-green-800 hover:bg-green-100' },
+  // Dispute Category
+  kualitas: { label: 'Kualitas', className: 'bg-orange-100 text-orange-800 hover:bg-orange-100' },
+  keterlambatan: { label: 'Keterlambatan', className: 'bg-amber-100 text-amber-800 hover:bg-amber-100' },
+  volume: { label: 'Volume', className: 'bg-blue-100 text-blue-800 hover:bg-blue-100' },
+  pembayaran: { label: 'Pembayaran', className: 'bg-purple-100 text-purple-800 hover:bg-purple-100' },
+  pembatalan: { label: 'Pembatalan', className: 'bg-red-100 text-red-800 hover:bg-red-100' },
 }
 
 interface StatusBadgeProps {

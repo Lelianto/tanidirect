@@ -6,7 +6,52 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-const Select = SelectPrimitive.Root
+/**
+ * Wrapper around Select.Root that auto-collects { value, label } from
+ * SelectItem children so SelectValue can display the label instead of the raw value.
+ */
+const SelectItemsContext = React.createContext<{
+  register: (value: string | number, label: string) => void
+  unregister: (value: string | number) => void
+  itemsMap: Record<string, React.ReactNode>
+}>({ register: () => {}, unregister: () => {}, itemsMap: {} })
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- base-ui Root.Props requires generic params
+function Select(props: SelectPrimitive.Root.Props<any, any>) {
+  const { items: itemsProp, children, ...rest } = props
+  const [collected, setCollected] = React.useState<Record<string, React.ReactNode>>({})
+
+  const register = React.useCallback((value: string | number, label: string) => {
+    setCollected((prev) => {
+      const key = String(value)
+      if (prev[key] === label) return prev
+      return { ...prev, [key]: label }
+    })
+  }, [])
+
+  const unregister = React.useCallback((value: string | number) => {
+    setCollected((prev) => {
+      const key = String(value)
+      if (!(key in prev)) return prev
+      const next = { ...prev }
+      delete next[key]
+      return next
+    })
+  }, [])
+
+  const ctx = React.useMemo(() => ({ register, unregister, itemsMap: collected }), [register, unregister, collected])
+
+  // Merge auto-collected items with any explicit items prop
+  const resolvedItems = itemsProp ?? collected
+
+  return (
+    <SelectItemsContext.Provider value={ctx}>
+      <SelectPrimitive.Root items={resolvedItems} {...rest}>
+        {children}
+      </SelectPrimitive.Root>
+    </SelectItemsContext.Provider>
+  )
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
@@ -83,7 +128,7 @@ function SelectContent({
         <SelectPrimitive.Popup
           data-slot="select-content"
           data-align-trigger={alignItemWithTrigger}
-          className={cn("relative isolate z-50 max-h-(--available-height) w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className )}
+          className={cn("relative isolate z-50 max-h-(--available-height) min-w-[max(var(--anchor-width),9rem)] origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className )}
           {...props}
         >
           <SelectScrollUpButton />
@@ -111,11 +156,27 @@ function SelectLabel({
 function SelectItem({
   className,
   children,
+  value,
+  label,
   ...props
 }: SelectPrimitive.Item.Props) {
+  const { register, unregister } = React.useContext(SelectItemsContext)
+
+  // Derive display label: explicit label prop → string children → stringify value
+  const displayLabel = label ?? (typeof children === 'string' ? children : String(value ?? ''))
+
+  React.useEffect(() => {
+    if (value != null) {
+      register(value, displayLabel)
+      return () => unregister(value)
+    }
+  }, [value, displayLabel, register, unregister])
+
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
+      value={value}
+      label={label}
       className={cn(
         "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className

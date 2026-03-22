@@ -19,10 +19,13 @@ import {
   ArrowDownToLine,
 } from 'lucide-react'
 import Link from 'next/link'
+import { KYCStatusBanner } from '@/components/kyc/KYCStatusBanner'
 
 export default function PetaniDashboard() {
   const user = useAuthStore((s) => s.user)
   const [cairkanOpen, setCairkanOpen] = useState(false)
+  // Demo: use 'pending' as default KYC status. In production, fetch from Supabase.
+  const kycStatus: string = 'pending'
 
   const kontribusi = user ? getKontribusiByPetaniId(user.id) : []
   const kredit = user ? getKreditByPetaniId(user.id) : []
@@ -71,6 +74,11 @@ export default function PetaniDashboard() {
           </h2>
           <p className="text-sm text-muted-foreground">{user?.kecamatan}, {user?.kabupaten}</p>
         </div>
+
+        {/* KYC Banner */}
+        {kycStatus !== 'layer1_passed' && kycStatus !== 'fully_verified' && (
+          <KYCStatusBanner kycStatus={kycStatus} />
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3">

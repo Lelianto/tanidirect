@@ -5,7 +5,8 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, ClipboardCheck, ShoppingCart, Truck,
   BarChart3, CreditCard, ShieldAlert, Building2, LogOut, Leaf,
-  History, User, ChevronLeft, ChevronRight,
+  History, User, ChevronLeft, ChevronRight, Scale, BookOpen,
+  Rocket, FileCheck, ScrollText, Store,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store'
@@ -26,6 +27,12 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   profil: User,
   transaksi: ShoppingCart,
   poktan: Users,
+  kyc: FileCheck,
+  dispute: Scale,
+  sop_dispute: BookOpen,
+  onboarding: Rocket,
+  sop: ScrollText,
+  katalog: Store,
 }
 
 interface NavItem {
@@ -41,6 +48,8 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: 'QA Inspeksi', href: '/poktan/qa', icon: 'qa' },
     { label: 'Permintaan Supplier', href: '/poktan/pre-order', icon: 'preorder' },
     { label: 'Logistik', href: '/poktan/logistik', icon: 'logistik' },
+    { label: 'Status KYC', href: '/poktan/kyc', icon: 'kyc' },
+    { label: 'Peraturan & SOP', href: '/poktan/sop', icon: 'sop' },
   ],
   supplier: [
     { label: 'Dashboard', href: '/supplier/dashboard', icon: 'dashboard' },
@@ -48,10 +57,15 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: 'Review QA', href: '/supplier/qa', icon: 'qa' },
     { label: 'Transaksi', href: '/supplier/transaksi', icon: 'transaksi' },
     { label: 'Prediksi Harga', href: '/supplier/harga', icon: 'harga' },
+    { label: 'Smart Katalog', href: '/supplier/katalog', icon: 'katalog' },
+    { label: 'Status KYC', href: '/supplier/kyc', icon: 'kyc' },
+    { label: 'Peraturan & SOP', href: '/supplier/sop', icon: 'sop' },
   ],
   petani: [
     { label: 'Dashboard', href: '/petani/dashboard', icon: 'dashboard' },
     { label: 'Riwayat', href: '/petani/riwayat', icon: 'riwayat' },
+    { label: 'Status KYC', href: '/petani/kyc', icon: 'kyc' },
+    { label: 'Peraturan & SOP', href: '/petani/sop', icon: 'sop' },
   ],
   admin: [
     { label: 'Dashboard', href: '/admin/dashboard', icon: 'dashboard' },
@@ -60,6 +74,10 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: 'Transaksi', href: '/admin/transaksi', icon: 'transaksi' },
     { label: 'Compliance', href: '/admin/compliance', icon: 'compliance' },
     { label: 'Kredit', href: '/admin/kredit', icon: 'kredit' },
+    { label: 'KYC Review', href: '/admin/kyc', icon: 'kyc' },
+    { label: 'Sengketa', href: '/admin/dispute', icon: 'dispute' },
+    { label: 'SOP Dispute', href: '/admin/sop-dispute', icon: 'sop_dispute' },
+    { label: 'Onboarding', href: '/admin/onboarding', icon: 'onboarding' },
   ],
 }
 
@@ -73,9 +91,8 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`hidden lg:flex flex-col fixed left-0 top-0 h-full bg-white border-r border-border z-50 transition-all duration-200 ${
-        collapsed ? 'w-16' : 'w-60'
-      }`}
+      className={`hidden lg:flex flex-col fixed left-0 top-0 h-full bg-white border-r border-border z-50 transition-all duration-200 ${collapsed ? 'w-16' : 'w-60'
+        }`}
     >
       {/* Logo */}
       <div className="flex items-center gap-2 h-14 px-4 border-b border-border">
@@ -84,7 +101,7 @@ export function Sidebar() {
         </div>
         {!collapsed && (
           <span className="font-semibold text-lg font-[family-name:var(--font-heading)] text-tani-green">
-            TaniDirect
+            taninesia
           </span>
         )}
       </div>
@@ -98,11 +115,10 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                isActive
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${isActive
                   ? 'bg-tani-green/10 text-tani-green'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              }`}
+                }`}
             >
               <Icon className="h-5 w-5 shrink-0" />
               {!collapsed && <span>{item.label}</span>}

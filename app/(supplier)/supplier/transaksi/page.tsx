@@ -109,7 +109,7 @@ export default function SupplierTransaksiPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {STATUS_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                    <SelectItem key={opt.value} value={opt.value} label={opt.label} className="text-xs">
                       {opt.label}
                     </SelectItem>
                   ))}

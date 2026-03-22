@@ -15,7 +15,7 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: "TaniDirect — Marketplace Pertanian B2B",
+  title: "taninesia — Marketplace Pertanian B2B",
   description: "Platform B2B yang menghubungkan Kelompok Tani langsung ke Supplier besar, memotong rantai tengkulak.",
 }
 
@@ -26,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" className={`${inter.variable} ${poppins.variable} h-full`}>
-      <body className="min-h-full flex flex-col antialiased">
+      <body suppressHydrationWarning className="min-h-full flex flex-col antialiased">
         {children}
         <Toaster position="top-right" />
       </body>

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useMemo } from 'react'
+import { KYCStatusBanner } from '@/components/kyc/KYCStatusBanner'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
@@ -49,6 +50,9 @@ export default function SupplierDashboard() {
     ? <ArrowDown className="h-4 w-4 text-tani-green" />
     : <Minus className="h-4 w-4 text-muted-foreground" />
 
+  // Demo: use 'pending' as default KYC status. In production, fetch from Supabase.
+  const kycStatus: string = 'pending'
+
   return (
     <>
       <TopBar title="Dashboard" />
@@ -61,6 +65,11 @@ export default function SupplierDashboard() {
             {supplier?.jenis_usaha} — {user?.kabupaten}
           </p>
         </div>
+
+        {/* KYC Banner */}
+        {kycStatus !== 'layer1_passed' && kycStatus !== 'fully_verified' && (
+          <KYCStatusBanner kycStatus={kycStatus} />
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

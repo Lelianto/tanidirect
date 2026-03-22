@@ -898,7 +898,7 @@ const SAYURAN_DAUN: QAFormDefinition = {
 const GENERIC: QAFormDefinition = {
   komoditas: 'Generic',
   label: 'INSPEKSI KUALITAS UMUM',
-  referensi: 'Standar Internal TaniDirect',
+  referensi: 'Standar Internal taninesia',
   dokumen: 'generic',
   sections: [
     {

@@ -188,7 +188,7 @@ export default function PreOrderPage() {
                         <SelectValue placeholder="Komoditas" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="semua">Semua Komoditas</SelectItem>
+                        <SelectItem value="semua" label="Semua Komoditas">Semua Komoditas</SelectItem>
                         {komoditasOptions.map((k) => (
                           <SelectItem key={k} value={k}>{k}</SelectItem>
                         ))}
@@ -199,10 +199,10 @@ export default function PreOrderPage() {
                         <SelectValue placeholder="Grade" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="semua">Semua Grade</SelectItem>
-                        <SelectItem value="A">Grade A</SelectItem>
-                        <SelectItem value="B">Grade B</SelectItem>
-                        <SelectItem value="C">Grade C</SelectItem>
+                        <SelectItem value="semua" label="Semua Grade">Semua Grade</SelectItem>
+                        <SelectItem value="A" label="Grade A">Grade A</SelectItem>
+                        <SelectItem value="B" label="Grade B">Grade B</SelectItem>
+                        <SelectItem value="C" label="Grade C">Grade C</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

@@ -85,11 +85,14 @@ export default function AdminPoktanPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {SERTIFIKASI_OPTIONS.map((o) => (
-                <SelectItem key={o} value={o}>
-                  {o === 'Semua Status' ? o : o === 'aktif' ? 'Tersertifikasi' : 'Belum'}
-                </SelectItem>
-              ))}
+              {SERTIFIKASI_OPTIONS.map((o) => {
+                const label = o === 'Semua Status' ? o : o === 'aktif' ? 'Tersertifikasi' : 'Belum'
+                return (
+                  <SelectItem key={o} value={o} label={label}>
+                    {label}
+                  </SelectItem>
+                )
+              })}
             </SelectContent>
           </Select>
 

@@ -18,10 +18,13 @@ import {
   Eye, Bell, ChevronRight, Headphones,
 } from 'lucide-react'
 import Link from 'next/link'
+import { KYCStatusBanner } from '@/components/kyc/KYCStatusBanner'
 
 export default function PoktanDashboard() {
   const user = useAuthStore((s) => s.user)
   const poktan = user ? getPoktanByKetuaId(user.id) : dummyPoktan[0]
+  // Demo: use 'pending' as default KYC status. In production, fetch from Supabase.
+  const kycStatus: string = 'pending'
 
   const transaksiAktif = dummyTransaksi.filter(
     (t) => t.poktan_id === poktan?.id && !['selesai', 'dibatalkan'].includes(t.status)
@@ -50,6 +53,11 @@ export default function PoktanDashboard() {
             {poktan?.nama_poktan} — {poktan?.kabupaten}, {poktan?.provinsi}
           </p>
         </div>
+
+        {/* KYC Banner */}
+        {kycStatus !== 'layer1_passed' && kycStatus !== 'fully_verified' && (
+          <KYCStatusBanner kycStatus={kycStatus} />
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

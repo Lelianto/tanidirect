@@ -52,31 +52,31 @@ const ROLE_OPTIONS: {
   color: string
   bgLight: string
 }[] = [
-  {
-    role: 'petani',
-    label: 'Petani',
-    desc: 'Produsen anggota kelompok tani',
-    icon: <ShoppingCart className="h-5 w-5" />,
-    color: 'bg-tani-amber text-white',
-    bgLight: 'bg-tani-amber/10 border-tani-amber/30',
-  },
-  {
-    role: 'ketua_poktan',
-    label: 'Ketua Poktan',
-    desc: 'QA officer, agregator, operator digital',
-    icon: <Users className="h-5 w-5" />,
-    color: 'bg-tani-green text-white',
-    bgLight: 'bg-tani-green/10 border-tani-green/30',
-  },
-  {
-    role: 'supplier',
-    label: 'Supplier',
-    desc: 'Pembeli korporat, distributor, restoran',
-    icon: <Building2 className="h-5 w-5" />,
-    color: 'bg-tani-blue text-white',
-    bgLight: 'bg-tani-blue/10 border-tani-blue/30',
-  },
-]
+    {
+      role: 'petani',
+      label: 'Petani',
+      desc: 'Produsen anggota kelompok tani',
+      icon: <ShoppingCart className="h-5 w-5" />,
+      color: 'bg-tani-amber text-white',
+      bgLight: 'bg-tani-amber/10 border-tani-amber/30',
+    },
+    {
+      role: 'ketua_poktan',
+      label: 'Ketua Poktan',
+      desc: 'QA officer, agregator, operator digital',
+      icon: <Users className="h-5 w-5" />,
+      color: 'bg-tani-green text-white',
+      bgLight: 'bg-tani-green/10 border-tani-green/30',
+    },
+    {
+      role: 'supplier',
+      label: 'Supplier',
+      desc: 'Pembeli korporat, distributor, restoran',
+      icon: <Building2 className="h-5 w-5" />,
+      color: 'bg-tani-blue text-white',
+      bgLight: 'bg-tani-blue/10 border-tani-blue/30',
+    },
+  ]
 
 const STEPS_BY_ROLE: Record<string, { label: string }[]> = {
   petani: [
@@ -415,15 +415,14 @@ export default function RegisterPage() {
               Daftar sebagai
             </h2>
             <p className="text-sm text-muted-foreground">
-              Pilih peran Anda di platform TaniDirect
+              Pilih peran Anda di platform taninesia
             </p>
           </div>
           {ROLE_OPTIONS.map((opt) => (
             <Card
               key={opt.role}
-              className={`cursor-pointer transition-all hover:shadow-md active:scale-[0.98] ${
-                role === opt.role ? `border-2 ${opt.bgLight}` : ''
-              }`}
+              className={`cursor-pointer transition-all hover:shadow-md active:scale-[0.98] ${role === opt.role ? `border-2 ${opt.bgLight}` : ''
+                }`}
               onClick={() => setRole(opt.role)}
             >
               <CardContent className="p-4">
@@ -438,11 +437,10 @@ export default function RegisterPage() {
                     <p className="text-xs text-muted-foreground">{opt.desc}</p>
                   </div>
                   <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                      role === opt.role
+                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${role === opt.role
                         ? 'border-primary bg-primary'
                         : 'border-muted-foreground/30'
-                    }`}
+                      }`}
                   >
                     {role === opt.role && (
                       <div className="w-2 h-2 rounded-full bg-white" />
@@ -927,7 +925,7 @@ export default function RegisterPage() {
             <Leaf className="h-6 w-6" />
           </div>
           <h1 className="text-xl font-bold font-[family-name:var(--font-heading)] text-tani-green">
-            TaniDirect
+            taninesia
           </h1>
         </div>
 
@@ -974,7 +972,7 @@ export default function RegisterPage() {
         {/* Footer */}
         {!isSuccessStep && (
           <p className="text-[11px] text-center text-muted-foreground">
-            Dengan mendaftar, Anda menyetujui ketentuan layanan TaniDirect
+            Dengan mendaftar, Anda menyetujui ketentuan layanan taninesia
           </p>
         )}
       </div>

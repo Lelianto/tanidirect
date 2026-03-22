@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, ClipboardCheck, ShoppingCart, Truck,
-  BarChart3, History, User,
+  BarChart3, History, User, ScrollText, FileCheck,
 } from 'lucide-react'
 import { useAuthStore } from '@/store'
 import type { UserRole } from '@/types'
@@ -18,6 +18,8 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   riwayat: History,
   profil: User,
   transaksi: ShoppingCart,
+  sop: ScrollText,
+  kyc: FileCheck,
 }
 
 interface NavItem {
@@ -31,19 +33,21 @@ const BOTTOM_NAV: Record<UserRole, NavItem[]> = {
     { label: 'Dashboard', href: '/poktan/dashboard', icon: 'dashboard' },
     { label: 'QA', href: '/poktan/qa', icon: 'qa' },
     { label: 'Permintaan', href: '/poktan/pre-order', icon: 'preorder' },
-    { label: 'Logistik', href: '/poktan/logistik', icon: 'logistik' },
+    { label: 'SOP', href: '/poktan/sop', icon: 'sop' },
     { label: 'Profil', href: '/poktan/profil', icon: 'profil' },
   ],
   supplier: [
     { label: 'Dashboard', href: '/supplier/dashboard', icon: 'dashboard' },
     { label: 'Pre-Order', href: '/supplier/pre-order', icon: 'preorder' },
     { label: 'QA', href: '/supplier/qa', icon: 'qa' },
-    { label: 'Harga', href: '/supplier/harga', icon: 'harga' },
+    { label: 'SOP', href: '/supplier/sop', icon: 'sop' },
     { label: 'Profil', href: '/supplier/profil', icon: 'profil' },
   ],
   petani: [
     { label: 'Dashboard', href: '/petani/dashboard', icon: 'dashboard' },
     { label: 'Riwayat', href: '/petani/riwayat', icon: 'riwayat' },
+    { label: 'KYC', href: '/petani/kyc', icon: 'kyc' },
+    { label: 'SOP', href: '/petani/sop', icon: 'sop' },
     { label: 'Profil', href: '/petani/profil', icon: 'profil' },
   ],
   admin: [

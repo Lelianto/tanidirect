@@ -133,9 +133,9 @@ export default function SupplierPreOrderPage() {
                       <SelectValue placeholder="Pilih grade" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="A">A - Premium</SelectItem>
-                      <SelectItem value="B">B - Standar</SelectItem>
-                      <SelectItem value="C">C - Ekonomi</SelectItem>
+                      <SelectItem value="A" label="A - Premium">A - Premium</SelectItem>
+                      <SelectItem value="B" label="B - Standar">B - Standar</SelectItem>
+                      <SelectItem value="C" label="C - Ekonomi">C - Ekonomi</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

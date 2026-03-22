@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Sidebar } from './Sidebar'
 import { BottomNav } from './BottomNav'
+import { SOPAgreementModal } from './SOPAgreementModal'
 import { useAuthStore } from '@/store'
 import type { UserRole } from '@/types'
 
@@ -14,7 +15,7 @@ interface AppShellProps {
 
 export function AppShell({ children, requiredRole }: AppShellProps) {
   const router = useRouter()
-  const { user, role } = useAuthStore()
+  const { user, role, hasAgreedSOP } = useAuthStore()
 
   useEffect(() => {
     if (!user || role !== requiredRole) {
@@ -30,6 +31,8 @@ export function AppShell({ children, requiredRole }: AppShellProps) {
     )
   }
 
+  const showSOPModal = role !== 'admin' && !hasAgreedSOP
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
@@ -39,6 +42,7 @@ export function AppShell({ children, requiredRole }: AppShellProps) {
         </main>
       </div>
       <BottomNav />
+      <SOPAgreementModal open={showSOPModal} />
     </div>
   )
 }

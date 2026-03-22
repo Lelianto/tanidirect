@@ -202,10 +202,10 @@ export default function AdminCompliancePage() {
                   <SelectValue placeholder="Pilih keputusan..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="clear">Clear - Tidak ada masalah</SelectItem>
-                  <SelectItem value="warning">Warning - Peringatan</SelectItem>
-                  <SelectItem value="suspend">Suspend - Tangguhkan sementara</SelectItem>
-                  <SelectItem value="blacklist">Blacklist - Blokir permanen</SelectItem>
+                  <SelectItem value="clear" label="Clear - Tidak ada masalah">Clear - Tidak ada masalah</SelectItem>
+                  <SelectItem value="warning" label="Warning - Peringatan">Warning - Peringatan</SelectItem>
+                  <SelectItem value="suspend" label="Suspend - Tangguhkan sementara">Suspend - Tangguhkan sementara</SelectItem>
+                  <SelectItem value="blacklist" label="Blacklist - Blokir permanen">Blacklist - Blokir permanen</SelectItem>
                 </SelectContent>
               </Select>
             </div>
