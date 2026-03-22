@@ -80,7 +80,7 @@ export default function PreOrderPage() {
 
   const komoditasOptions = [...new Set(dummyPreOrders.filter((po) => po.status === 'open').map((po) => po.komoditas))]
 
-  function openAjukan(po: PreOrder) {
+  function openKirimPenawaran(po: PreOrder) {
     setSelectedPO(po)
     setVolumeSanggup(String(po.volume_kg))
     setTanggalEstimasi('')
@@ -93,7 +93,7 @@ export default function PreOrderPage() {
     setSelectedPO(null)
   }
 
-  function renderPOCard(po: PreOrder, showAjukan = false) {
+  function renderPOCard(po: PreOrder, showKirimPenawaran = false) {
     return (
       <Card key={po.id} className="shadow-sm">
         <CardContent className="p-4">
@@ -134,14 +134,14 @@ export default function PreOrderPage() {
               <p className="text-sm font-semibold text-tani-green">
                 {formatRupiah(po.volume_kg * po.harga_penawaran_per_kg)}
               </p>
-              {showAjukan && (
+              {showKirimPenawaran && (
                 <Button
                   size="sm"
                   className="bg-tani-green hover:bg-tani-green/90 text-white mt-1"
-                  onClick={() => openAjukan(po)}
+                  onClick={() => openKirimPenawaran(po)}
                 >
                   <Send className="h-3 w-3 mr-1" />
-                  Ajukan
+                  Kirim Penawaran
                 </Button>
               )}
             </div>
@@ -153,7 +153,7 @@ export default function PreOrderPage() {
 
   return (
     <>
-      <TopBar title="Pre-Order" />
+      <TopBar title="Permintaan Supplier" />
       <div className="p-4 lg:p-6 space-y-6 max-w-5xl">
         <Tabs defaultValue={0}>
           <TabsList className="w-full">
@@ -163,7 +163,7 @@ export default function PreOrderPage() {
             </TabsTrigger>
             <TabsTrigger value={1}>
               <Send className="h-4 w-4" />
-              Diajukan ({poDiajukan.length})
+              Terkirim ({poDiajukan.length})
             </TabsTrigger>
             <TabsTrigger value={2}>
               <CheckCircle className="h-4 w-4" />
@@ -212,7 +212,7 @@ export default function PreOrderPage() {
               <div className="space-y-3">
                 {poTersedia.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-8">
-                    Tidak ada pre-order yang cocok dengan komoditas poktan Anda
+                    Tidak ada permintaan yang cocok dengan komoditas poktan Anda
                   </p>
                 ) : (
                   poTersedia.map((po) => renderPOCard(po, true))
@@ -221,12 +221,12 @@ export default function PreOrderPage() {
             </div>
           </TabsContent>
 
-          {/* Tab: Sudah Diajukan */}
+          {/* Tab: Penawaran Terkirim */}
           <TabsContent value={1}>
             <div className="space-y-3 mt-4">
               {poDiajukan.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">
-                  Belum ada penawaran yang diajukan
+                  Belum ada penawaran yang terkirim
                 </p>
               ) : (
                 poDiajukan.map((po) => renderPOCard(po))
@@ -239,7 +239,7 @@ export default function PreOrderPage() {
             <div className="space-y-3 mt-4">
               {poDisetujui.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">
-                  Belum ada pre-order yang disetujui
+                  Belum ada penawaran yang disetujui
                 </p>
               ) : (
                 poDisetujui.map((po) => renderPOCard(po))
@@ -252,7 +252,7 @@ export default function PreOrderPage() {
             <div className="space-y-3 mt-4">
               {poRiwayat.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">
-                  Belum ada riwayat pre-order
+                  Belum ada riwayat permintaan
                 </p>
               ) : (
                 poRiwayat.map((po) => renderPOCard(po))
@@ -262,11 +262,11 @@ export default function PreOrderPage() {
         </Tabs>
       </div>
 
-      {/* Dialog: Ajukan Penawaran */}
+      {/* Dialog: Kirim Penawaran */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog() }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Ajukan Penawaran</DialogTitle>
+            <DialogTitle>Kirim Penawaran</DialogTitle>
             <DialogDescription>
               {selectedPO && (
                 <>
@@ -278,10 +278,10 @@ export default function PreOrderPage() {
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Volume Sanggup (kg)</Label>
+              <Label>Volume yang Disanggupi (kg)</Label>
               <Input
                 type="number"
-                placeholder="Masukkan volume yang bisa Anda suplai"
+                placeholder="Masukkan volume yang bisa Anda penuhi"
                 value={volumeSanggup}
                 onChange={(e) => setVolumeSanggup(e.target.value)}
               />

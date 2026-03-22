@@ -1,23 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-  DialogDescription, DialogFooter,
-} from '@/components/ui/dialog'
-import {
-  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
-} from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
 import { useAuthStore } from '@/store'
 import {
   dummyPoktan, dummyTransaksi, dummyQAInspeksi, dummySuppliers,
@@ -26,10 +15,13 @@ import {
 import { formatRupiah, formatKg } from '@/lib/utils/currency'
 import { formatTanggalSingkat } from '@/lib/utils/date'
 import { GRADE_COLORS } from '@/lib/constants/komoditas'
+import { getAllDraftIds, loadDraft } from '@/lib/data/qa-forms'
+import { timeAgo } from '@/lib/utils/date'
 import {
-  ClipboardCheck, AlertTriangle, CheckCircle, Upload, ArrowLeft, ArrowRight,
+  ClipboardCheck, CheckCircle, FileEdit,
 } from 'lucide-react'
-import type { Transaksi, QAInspeksi, KomoditasGrade } from '@/types'
+import Link from 'next/link'
+import type { Transaksi } from '@/types'
 
 export default function QAInspeksiPage() {
   const user = useAuthStore((s) => s.user)
@@ -49,44 +41,77 @@ export default function QAInspeksiPage() {
     (qa) => qa.poktan_id === poktan?.id && qa.status !== 'pending'
   )
 
-  // Wizard state
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [selectedTx, setSelectedTx] = useState<Transaksi | null>(null)
-  const [step, setStep] = useState(1)
+  // Draft tracking
+  const [draftTxIds, setDraftTxIds] = useState<Set<string>>(new Set())
+  const [draftTimestamps, setDraftTimestamps] = useState<Record<string, string>>({})
 
-  // Form state
-  const [volumeAktual, setVolumeAktual] = useState('')
-  const [grade, setGrade] = useState<KomoditasGrade | ''>('')
-  const [skorKualitas, setSkorKualitas] = useState('')
-  const [catatan, setCatatan] = useState('')
-
-  function openInspeksi(tx: Transaksi) {
-    setSelectedTx(tx)
-    setStep(1)
-    setVolumeAktual(String(tx.volume_estimasi_kg))
-    setGrade(tx.grade)
-    setSkorKualitas('')
-    setCatatan('')
-    setDialogOpen(true)
-  }
-
-  function closeDialog() {
-    setDialogOpen(false)
-    setSelectedTx(null)
-    setStep(1)
-  }
-
-  const deviasi = selectedTx
-    ? Math.abs(
-        ((Number(volumeAktual) - selectedTx.volume_estimasi_kg) /
-          selectedTx.volume_estimasi_kg) *
-          100
-      )
-    : 0
+  useEffect(() => {
+    const ids = getAllDraftIds()
+    setDraftTxIds(new Set(ids))
+    const timestamps: Record<string, string> = {}
+    for (const id of ids) {
+      const draft = loadDraft(id)
+      if (draft) timestamps[id] = draft.updated_at
+    }
+    setDraftTimestamps(timestamps)
+  }, [])
 
   function getSupplierName(supplierId: string) {
     const supplier = dummySuppliers.find((s) => s.id === supplierId)
     return supplier?.nama_perusahaan || '-'
+  }
+
+  function renderTxCard(tx: Transaksi) {
+    const existingQA = qaMap.get(tx.id)
+    const hasDraft = draftTxIds.has(tx.id)
+    const draftTime = draftTimestamps[tx.id]
+
+    return (
+      <Card key={tx.id} className="shadow-sm">
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-2 min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-semibold text-sm">{tx.komoditas}</h3>
+                <Badge
+                  className={`${GRADE_COLORS[tx.grade] || 'bg-slate-100 text-slate-700'} text-[10px] px-1.5 py-0`}
+                >
+                  Grade {tx.grade}
+                </Badge>
+                {existingQA && <StatusBadge status={existingQA.status} />}
+              </div>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span>{formatKg(tx.volume_estimasi_kg)}</span>
+                <span className="text-foreground font-medium">
+                  {formatRupiah(tx.harga_per_kg)}/kg
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Supplier: {getSupplierName(tx.supplier_id)}
+              </p>
+              {hasDraft && draftTime && (
+                <div className="flex items-center gap-1 text-[10px] text-tani-amber">
+                  <FileEdit className="h-3 w-3" />
+                  Draft tersimpan &middot; {timeAgo(draftTime)}
+                </div>
+              )}
+            </div>
+            <Link href={`/poktan/qa/${tx.id}`}>
+              <Button
+                size="sm"
+                className={`shrink-0 ${
+                  hasDraft
+                    ? 'bg-tani-amber hover:bg-tani-amber/90 text-white'
+                    : 'bg-tani-green hover:bg-tani-green/90 text-white'
+                }`}
+              >
+                {hasDraft ? 'Lanjutkan Draft' : 'Mulai Inspeksi'}
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -113,46 +138,7 @@ export default function QAInspeksiPage() {
                   Tidak ada transaksi yang perlu inspeksi QA
                 </p>
               ) : (
-                perluQA.map((tx) => {
-                  const existingQA = qaMap.get(tx.id)
-                  return (
-                    <Card key={tx.id} className="shadow-sm">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="space-y-2 min-w-0 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="font-semibold text-sm">{tx.komoditas}</h3>
-                              <Badge
-                                className={`${GRADE_COLORS[tx.grade] || 'bg-slate-100 text-slate-700'} text-[10px] px-1.5 py-0`}
-                              >
-                                Grade {tx.grade}
-                              </Badge>
-                              {existingQA && (
-                                <StatusBadge status={existingQA.status} />
-                              )}
-                            </div>
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                              <span>{formatKg(tx.volume_estimasi_kg)}</span>
-                              <span className="text-foreground font-medium">
-                                {formatRupiah(tx.harga_per_kg)}/kg
-                              </span>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              Supplier: {getSupplierName(tx.supplier_id)}
-                            </p>
-                          </div>
-                          <Button
-                            size="sm"
-                            className="bg-tani-green hover:bg-tani-green/90 text-white shrink-0"
-                            onClick={() => openInspeksi(tx)}
-                          >
-                            Mulai Inspeksi
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })
+                perluQA.map((tx) => renderTxCard(tx))
               )}
             </div>
           </TabsContent>
@@ -217,251 +203,6 @@ export default function QAInspeksiPage() {
           </TabsContent>
         </Tabs>
       </div>
-
-      {/* Multi-step Inspection Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog() }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              Inspeksi QA — Langkah {step}/3
-            </DialogTitle>
-            <DialogDescription>
-              {step === 1 && 'Informasi transaksi yang akan diinspeksi'}
-              {step === 2 && 'Isi hasil inspeksi kualitas'}
-              {step === 3 && 'Konfirmasi hasil inspeksi'}
-            </DialogDescription>
-          </DialogHeader>
-
-          {/* Step indicator */}
-          <div className="flex items-center gap-2">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className="flex items-center gap-2 flex-1">
-                <div
-                  className={`h-2 flex-1 rounded-full ${
-                    s <= step ? 'bg-tani-green' : 'bg-muted'
-                  }`}
-                />
-              </div>
-            ))}
-          </div>
-
-          {selectedTx && (
-            <>
-              {/* Step 1: Info Transaksi */}
-              {step === 1 && (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Komoditas</p>
-                      <p className="font-medium">{selectedTx.komoditas}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Grade</p>
-                      <p className="font-medium">Grade {selectedTx.grade}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Volume Estimasi</p>
-                      <p className="font-medium">{formatKg(selectedTx.volume_estimasi_kg)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Harga/kg</p>
-                      <p className="font-medium">{formatRupiah(selectedTx.harga_per_kg)}</p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="text-xs text-muted-foreground">Supplier</p>
-                      <p className="font-medium">{getSupplierName(selectedTx.supplier_id)}</p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="text-xs text-muted-foreground">Total Nilai</p>
-                      <p className="font-semibold text-tani-green">
-                        {formatRupiah(selectedTx.total_nilai || selectedTx.volume_estimasi_kg * selectedTx.harga_per_kg)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 2: Input Inspeksi */}
-              {step === 2 && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Volume Aktual (kg)</Label>
-                    <Input
-                      type="number"
-                      placeholder="Masukkan volume aktual"
-                      value={volumeAktual}
-                      onChange={(e) => setVolumeAktual(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Grade Hasil</Label>
-                    <Select value={grade} onValueChange={(val) => setGrade(val as KomoditasGrade)}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Pilih grade" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="A">Grade A - Premium</SelectItem>
-                        <SelectItem value="B">Grade B - Standar</SelectItem>
-                        <SelectItem value="C">Grade C - Ekonomi</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Skor Kualitas (0-100)</Label>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={skorKualitas || 0}
-                        onChange={(e) => setSkorKualitas(e.target.value)}
-                        className="flex-1 accent-tani-green"
-                      />
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={skorKualitas}
-                        onChange={(e) => setSkorKualitas(e.target.value)}
-                        className="w-20"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Catatan Inspeksi</Label>
-                    <Textarea
-                      placeholder="Catatan kualitas, kondisi produk, dll..."
-                      value={catatan}
-                      onChange={(e) => setCatatan(e.target.value)}
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Foto Inspeksi</Label>
-                    <div className="border-2 border-dashed border-muted rounded-lg p-6 text-center">
-                      <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        Klik atau drag foto ke sini
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        PNG, JPG (maks. 5MB)
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 3: Confirmation */}
-              {step === 3 && (
-                <div className="space-y-4">
-                  <div className="space-y-3 text-sm">
-                    <h4 className="font-semibold">Ringkasan Inspeksi</h4>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Komoditas</p>
-                        <p className="font-medium">{selectedTx.komoditas}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Grade Hasil</p>
-                        <p className="font-medium">
-                          Grade {grade}
-                          {grade !== selectedTx.grade && (
-                            <span className="text-tani-amber ml-1 text-xs">
-                              (berubah dari {selectedTx.grade})
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-2">
-                      <p className="font-medium text-xs text-muted-foreground">Perbandingan Volume</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-muted/50 rounded-lg p-3">
-                          <p className="text-xs text-muted-foreground">Estimasi</p>
-                          <p className="font-semibold">{formatKg(selectedTx.volume_estimasi_kg)}</p>
-                        </div>
-                        <div className="bg-muted/50 rounded-lg p-3">
-                          <p className="text-xs text-muted-foreground">Aktual</p>
-                          <p className="font-semibold">{formatKg(Number(volumeAktual) || 0)}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {deviasi > 10 && (
-                      <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                        <AlertTriangle className="h-4 w-4 text-tani-amber shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium text-amber-800">
-                            Deviasi {deviasi.toFixed(1)}% (lebih dari 10%)
-                          </p>
-                          <p className="text-xs text-amber-700 mt-0.5">
-                            Penyimpangan besar akan ditinjau oleh admin dan dapat mempengaruhi skor QA poktan.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Skor Kualitas</p>
-                        <p className="font-semibold">{skorKualitas || '-'}/100</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Deviasi</p>
-                        <p className={`font-semibold ${deviasi > 10 ? 'text-tani-amber' : 'text-tani-green'}`}>
-                          {deviasi.toFixed(1)}%
-                        </p>
-                      </div>
-                    </div>
-
-                    {catatan && (
-                      <div>
-                        <p className="text-xs text-muted-foreground">Catatan</p>
-                        <p className="text-sm">{catatan}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          <DialogFooter>
-            {step > 1 && (
-              <Button variant="outline" onClick={() => setStep(step - 1)}>
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Kembali
-              </Button>
-            )}
-            {step < 3 ? (
-              <Button
-                className="bg-tani-green hover:bg-tani-green/90 text-white"
-                onClick={() => setStep(step + 1)}
-                disabled={step === 2 && (!volumeAktual || !grade || !skorKualitas)}
-              >
-                Lanjut
-                <ArrowRight className="h-4 w-4 ml-1" />
-              </Button>
-            ) : (
-              <Button
-                className="bg-tani-green hover:bg-tani-green/90 text-white"
-                onClick={closeDialog}
-              >
-                <CheckCircle className="h-4 w-4 mr-1" />
-                Submit Inspeksi
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   )
 }

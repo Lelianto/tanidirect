@@ -173,15 +173,17 @@ export default function LogistikPage() {
                           )
                         })}
                       </div>
-                      <div className="flex justify-between text-[11px]">
+                      <div className="flex items-start gap-1 text-[11px]">
                         {STATUS_STEPS.map((s, i) => (
-                          <span key={s} className={`text-center ${
-                            i < stepIndex ? 'text-emerald-600 font-semibold'
-                            : i === stepIndex ? 'text-emerald-700 font-semibold'
-                            : 'text-gray-400'
-                          }`}>
-                            {getStepLabel(s)}
-                          </span>
+                          <div key={s} className="flex-1">
+                            <span className={`block leading-tight ${
+                              i < stepIndex ? 'text-emerald-600 font-semibold'
+                              : i === stepIndex ? 'text-emerald-700 font-semibold'
+                              : 'text-gray-400'
+                            }`}>
+                              {getStepLabel(s)}
+                            </span>
+                          </div>
                         ))}
                       </div>
                     </div>

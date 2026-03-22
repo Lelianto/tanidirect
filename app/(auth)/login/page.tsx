@@ -96,9 +96,17 @@ export default function LoginPage() {
           ))}
         </div>
 
-        <p className="text-[11px] text-center text-muted-foreground">
-          Data yang ditampilkan adalah dummy untuk keperluan demo
-        </p>
+        <div className="text-center space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Belum punya akun?{' '}
+            <a href="/register" className="text-tani-green font-medium hover:underline">
+              Daftar sekarang
+            </a>
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            Data yang ditampilkan adalah dummy untuk keperluan demo
+          </p>
+        </div>
       </div>
     </div>
   )

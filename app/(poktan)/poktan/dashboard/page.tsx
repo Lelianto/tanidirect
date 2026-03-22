@@ -90,7 +90,7 @@ export default function PoktanDashboard() {
           <Link href="/poktan/pre-order">
             <Button variant="outline" className="w-full h-auto py-3 flex flex-col gap-1">
               <Eye className="h-5 w-5 text-tani-blue" />
-              <span className="text-xs">Pre-Order</span>
+              <span className="text-xs">Permintaan</span>
             </Button>
           </Link>
           <Button variant="outline" className="w-full h-auto py-3 flex flex-col gap-1">
@@ -131,11 +131,11 @@ export default function PoktanDashboard() {
             </CardContent>
           </Card>
 
-          {/* Pre-Order Tersedia */}
+          {/* Permintaan Supplier Tersedia */}
           <Card className="shadow-sm">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold">Pre-Order Tersedia</CardTitle>
+                <CardTitle className="text-sm font-semibold">Permintaan Supplier</CardTitle>
                 <Link href="/poktan/pre-order" className="text-xs text-tani-green font-medium flex items-center">
                   Lihat Semua <ChevronRight className="h-3 w-3" />
                 </Link>
@@ -144,7 +144,7 @@ export default function PoktanDashboard() {
             <CardContent className="space-y-3">
               {preOrderTersedia.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  Tidak ada pre-order yang cocok
+                  Tidak ada permintaan yang cocok
                 </p>
               ) : (
                 preOrderTersedia.map((po) => (

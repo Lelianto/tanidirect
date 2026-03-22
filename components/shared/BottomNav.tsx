@@ -30,13 +30,14 @@ const BOTTOM_NAV: Record<UserRole, NavItem[]> = {
   ketua_poktan: [
     { label: 'Dashboard', href: '/poktan/dashboard', icon: 'dashboard' },
     { label: 'QA', href: '/poktan/qa', icon: 'qa' },
-    { label: 'Pre-Order', href: '/poktan/pre-order', icon: 'preorder' },
+    { label: 'Permintaan', href: '/poktan/pre-order', icon: 'preorder' },
     { label: 'Logistik', href: '/poktan/logistik', icon: 'logistik' },
     { label: 'Profil', href: '/poktan/profil', icon: 'profil' },
   ],
   supplier: [
     { label: 'Dashboard', href: '/supplier/dashboard', icon: 'dashboard' },
     { label: 'Pre-Order', href: '/supplier/pre-order', icon: 'preorder' },
+    { label: 'QA', href: '/supplier/qa', icon: 'qa' },
     { label: 'Harga', href: '/supplier/harga', icon: 'harga' },
     { label: 'Profil', href: '/supplier/profil', icon: 'profil' },
   ],
