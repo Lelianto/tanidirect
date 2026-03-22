@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import {
   Leaf,
   Users,
@@ -949,13 +950,12 @@ export default function RegisterPage() {
                 Kembali
               </Button>
             ) : (
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => router.push('/login')}
+              <Link
+                href="/login"
+                className="flex-1 inline-flex items-center justify-center h-8 rounded-lg border border-input bg-background px-2.5 text-sm font-medium hover:bg-muted transition-colors"
               >
                 Sudah punya akun?
-              </Button>
+              </Link>
             )}
             {isLastFormStep ? (
               <Button className="flex-1" onClick={handleSubmit}>

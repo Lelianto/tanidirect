@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Leaf, Users, ShoppingCart, Building2, Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -99,9 +100,9 @@ export default function LoginPage() {
         <div className="text-center space-y-2">
           <p className="text-sm text-muted-foreground">
             Belum punya akun?{' '}
-            <a href="/register" className="text-tani-green font-medium hover:underline">
+            <Link href="/register" className="text-tani-green font-medium hover:underline">
               Daftar sekarang
-            </a>
+            </Link>
           </p>
           <p className="text-[11px] text-muted-foreground">
             Data yang ditampilkan adalah dummy untuk keperluan demo
