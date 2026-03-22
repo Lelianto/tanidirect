@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Sidebar } from './Sidebar'
 import { BottomNav } from './BottomNav'
@@ -16,14 +16,23 @@ interface AppShellProps {
 export function AppShell({ children, requiredRole }: AppShellProps) {
   const router = useRouter()
   const { user, role, hasAgreedSOP } = useAuthStore()
+  const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
-    if (!user || role !== requiredRole) {
+    // Wait for Zustand persist to hydrate from localStorage
+    const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true))
+    // If already hydrated (e.g. navigating between pages), set immediately
+    if (useAuthStore.persist.hasHydrated()) setHydrated(true)
+    return unsub
+  }, [])
+
+  useEffect(() => {
+    if (hydrated && (!user || role !== requiredRole)) {
       router.replace('/login')
     }
-  }, [user, role, requiredRole, router])
+  }, [hydrated, user, role, requiredRole, router])
 
-  if (!user || role !== requiredRole) {
+  if (!hydrated || !user || role !== requiredRole) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="h-8 w-8 rounded-full border-3 border-muted border-t-tani-green animate-spin" />

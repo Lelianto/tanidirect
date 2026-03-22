@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Inter, Poppins } from "next/font/google"
 import { Toaster } from "@/components/ui/sonner"
+import { AuthHydrator } from "@/components/shared/AuthHydrator"
 import "./globals.css"
 
 const inter = Inter({
@@ -27,6 +28,7 @@ export default function RootLayout({
   return (
     <html lang="id" className={`${inter.variable} ${poppins.variable} h-full`}>
       <body suppressHydrationWarning className="min-h-full flex flex-col antialiased">
+        <AuthHydrator />
         {children}
         <Toaster position="top-right" />
       </body>

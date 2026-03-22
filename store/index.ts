@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import type { User, UserRole } from '@/types'
 
 const DEMO_USERS: Record<string, User> = {
@@ -66,23 +67,36 @@ interface AuthState {
   logout: () => void
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  role: null,
-  hasAgreedSOP: false,
-  setUser: (user) => set({ user, role: user.role, hasAgreedSOP: false }),
-  switchRole: (role) => {
-    // Demo mode: use dummy users
-    const user = DEMO_USERS[role]
-    set({ user, role, hasAgreedSOP: false })
-  },
-  agreeSOP: () => set({ hasAgreedSOP: true }),
-  logout: () => {
-    // Clear stored tokens
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('sb-access-token')
-      localStorage.removeItem('sb-refresh-token')
-    }
-    set({ user: null, role: null, hasAgreedSOP: false })
-  },
-}))
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      role: null,
+      hasAgreedSOP: false,
+      setUser: (user) => set({ user, role: user.role, hasAgreedSOP: false }),
+      switchRole: (role) => {
+        // Demo mode: use dummy users
+        const user = DEMO_USERS[role]
+        set({ user, role, hasAgreedSOP: false })
+      },
+      agreeSOP: () => set({ hasAgreedSOP: true }),
+      logout: () => {
+        // Clear stored tokens
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('sb-access-token')
+          localStorage.removeItem('sb-refresh-token')
+          localStorage.removeItem('auth-storage')
+        }
+        set({ user: null, role: null, hasAgreedSOP: false })
+      },
+    }),
+    {
+      name: 'auth-storage',
+      partialize: (state) => ({
+        user: state.user,
+        role: state.role,
+        hasAgreedSOP: state.hasAgreedSOP,
+      }),
+    },
+  ),
+)
