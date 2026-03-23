@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Leaf, Upload, Camera, X, CheckCircle2, Loader2, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -72,6 +72,18 @@ const ICON_MAP = {
 }
 
 export default function KYCUploadPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    }>
+      <KYCUploadContent />
+    </Suspense>
+  )
+}
+
+function KYCUploadContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const user = useAuthStore((s) => s.user)
