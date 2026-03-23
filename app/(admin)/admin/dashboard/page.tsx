@@ -8,8 +8,10 @@ import { formatRupiah } from '@/lib/utils/currency'
 import { timeAgo } from '@/lib/utils/date'
 import {
   Users, Building2, TrendingUp, Wallet,
-  AlertTriangle, ChevronRight,
+  AlertTriangle, ChevronRight, Sparkles, Loader2,
 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import type { DashboardInsightResponse } from '@/types'
 import Link from 'next/link'
 import { useState, useEffect, useMemo } from 'react'
 import {
@@ -25,6 +27,8 @@ export default function AdminDashboard() {
   })
   const [anomaliOpen, setAnomaliOpen] = useState<any[]>([])
   const [kreditPending, setKreditPending] = useState<any[]>([])
+  const [aiInsight, setAiInsight] = useState<DashboardInsightResponse | null>(null)
+  const [aiInsightLoading, setAiInsightLoading] = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/dashboard')
@@ -81,6 +85,118 @@ export default function AdminDashboard() {
             trendValue="+18%"
           />
         </div>
+
+        {/* AI Insight */}
+        <Card className="shadow-sm border-blue-200">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-blue-500" />
+                AI Insight Platform
+              </CardTitle>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                disabled={aiInsightLoading}
+                onClick={async () => {
+                  setAiInsightLoading(true)
+                  try {
+                    const res = await fetch('/api/ai/dashboard-insight', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: '{}',
+                    })
+                    const data = await res.json()
+                    if (data.ringkasan) setAiInsight(data)
+                  } catch {
+                    // ignore
+                  } finally {
+                    setAiInsightLoading(false)
+                  }
+                }}
+              >
+                {aiInsightLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3.5 w-3.5 mr-1" />
+                )}
+                {aiInsightLoading ? 'Menganalisis...' : 'Generate Insight'}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {!aiInsight && !aiInsightLoading && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Klik &quot;Generate Insight&quot; untuk mendapatkan analisis AI tentang kondisi platform.
+              </p>
+            )}
+            {aiInsightLoading && (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+              </div>
+            )}
+            {aiInsight && (
+              <div className="space-y-4">
+                {/* Ringkasan */}
+                <div className="bg-blue-50 rounded-lg p-3">
+                  <p className="text-sm text-blue-900">{aiInsight.ringkasan}</p>
+                </div>
+
+                {/* Insights */}
+                {aiInsight.insights.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold mb-2">Insights</p>
+                    <div className="space-y-2">
+                      {aiInsight.insights.map((ins, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <StatusBadge status={ins.prioritas} />
+                          <div>
+                            <p className="text-xs font-medium">{ins.judul}</p>
+                            <p className="text-xs text-muted-foreground">{ins.deskripsi}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Peringatan */}
+                {aiInsight.peringatan.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold mb-2">Peringatan</p>
+                    <div className="space-y-2">
+                      {aiInsight.peringatan.map((p, i) => (
+                        <div key={i} className="bg-orange-50 border border-orange-200 rounded-lg p-2">
+                          <p className="text-xs font-medium text-orange-800">{p.judul}</p>
+                          <p className="text-xs text-orange-700">{p.deskripsi}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Rekomendasi Aksi */}
+                {aiInsight.rekomendasiAksi.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold mb-2">Rekomendasi Aksi</p>
+                    <div className="space-y-1.5">
+                      {aiInsight.rekomendasiAksi.map((r, i) => (
+                        <div key={i} className="flex items-start gap-2 text-xs">
+                          <input type="checkbox" className="mt-0.5 rounded" readOnly />
+                          <div>
+                            <span className="font-medium">{r.aksi}</span>
+                            <span className="text-muted-foreground ml-1">— {r.alasan}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Chart */}

@@ -20,10 +20,31 @@ interface SOPAgreementModalProps {
 
 export function SOPAgreementModal({ open }: SOPAgreementModalProps) {
   const [agreed, setAgreed] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const agreeSOP = useAuthStore((s) => s.agreeSOP)
+  const user = useAuthStore((s) => s.user)
 
-  function handleSubmit() {
-    agreeSOP()
+  async function handleSubmit() {
+    setIsSubmitting(true)
+    try {
+      // Save to DB for real users (non-demo)
+      if (user && !user.id.startsWith('demo-')) {
+        await fetch('/api/sop/agree', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: user.id,
+            sop_key: 'sop_platform_v1',
+          }),
+        })
+      }
+      agreeSOP()
+    } catch {
+      // Still agree locally even if API fails — user shouldn't be stuck
+      agreeSOP()
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -118,8 +139,8 @@ export function SOPAgreementModal({ open }: SOPAgreementModalProps) {
           </label>
         </div>
 
-        <Button className="w-full" disabled={!agreed} onClick={handleSubmit}>
-          Masuk ke Platform
+        <Button className="w-full" disabled={!agreed || isSubmitting} onClick={handleSubmit}>
+          {isSubmitting ? 'Menyimpan...' : 'Masuk ke Platform'}
         </Button>
       </DialogContent>
     </Dialog>

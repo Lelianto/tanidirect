@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { groq, GROQ_MODEL } from '@/lib/groq/client'
+import { getCache, setCache } from '@/lib/groq/cache'
+import { createHash } from 'crypto'
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,6 +13,14 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Cache key: hash of input combination
+    const cacheKey = createHash('md5')
+      .update(`${catatan}|${komoditas}|${grade || ''}`)
+      .digest('hex')
+
+    const cached = await getCache('qa-notes', cacheKey)
+    if (cached) return NextResponse.json(cached)
 
     const prompt = `Kamu adalah ahli quality assurance produk pertanian Indonesia.
 
@@ -66,7 +76,10 @@ Jawab HANYA dalam format JSON array, tanpa penjelasan tambahan:
       kriteria: step.kriteria,
     }))
 
-    return NextResponse.json({ steps: qaSteps })
+    const result = { steps: qaSteps }
+    await setCache('qa-notes', cacheKey, result, 720) // 30 days
+
+    return NextResponse.json(result)
   } catch (error) {
     console.error('QA Notes AI error:', error)
 

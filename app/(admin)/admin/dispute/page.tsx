@@ -16,9 +16,9 @@ import {
 } from '@/components/ui/dialog'
 import { formatTanggal } from '@/lib/utils/date'
 import { formatRupiah } from '@/lib/utils/currency'
-import type { Dispute } from '@/types'
+import type { Dispute, DisputeRecommendationResponse } from '@/types'
 import {
-  AlertTriangle, Clock, FileWarning, Scale, MessageSquare,
+  AlertTriangle, Clock, FileWarning, Scale, MessageSquare, Sparkles, Loader2,
 } from 'lucide-react'
 
 export default function AdminDisputePage() {
@@ -29,6 +29,8 @@ export default function AdminDisputePage() {
   const [keputusan, setKeputusan] = useState('')
   const [kompensasi, setKompensasi] = useState(0)
   const [allDisputes, setAllDisputes] = useState<Dispute[]>([])
+  const [aiRecommendation, setAiRecommendation] = useState<DisputeRecommendationResponse | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/disputes')
@@ -71,6 +73,7 @@ export default function AdminDisputePage() {
     setResolusi('')
     setKeputusan('')
     setKompensasi(0)
+    setAiRecommendation(null)
     setDialogOpen(true)
   }
 
@@ -228,6 +231,78 @@ export default function AdminDisputePage() {
                 ))}
               </div>
             </div>
+
+            {/* AI Recommendation */}
+            {selectedDispute?.status !== 'selesai' && (
+              <div className="space-y-3">
+                <Button
+                  variant="outline"
+                  className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
+                  disabled={aiLoading}
+                  onClick={async () => {
+                    if (!selectedDispute) return
+                    setAiLoading(true)
+                    setAiRecommendation(null)
+                    try {
+                      const res = await fetch('/api/ai/dispute-recommendation', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ disputeId: selectedDispute.id }),
+                      })
+                      const data = await res.json()
+                      if (data.rekomendasiResolusi) {
+                        setAiRecommendation(data)
+                        setKeputusan(data.rekomendasiResolusi)
+                        setKompensasi(data.kompensasiSaran || 0)
+                        setResolusi(data.alasan || '')
+                      }
+                    } catch {
+                      // ignore
+                    } finally {
+                      setAiLoading(false)
+                    }
+                  }}
+                >
+                  {aiLoading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4 mr-2" />
+                  )}
+                  {aiLoading ? 'Menganalisis...' : 'Minta Rekomendasi AI'}
+                </Button>
+
+                {aiRecommendation && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
+                    <p className="text-xs font-semibold text-blue-800 flex items-center gap-1">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Rekomendasi AI
+                      <span className="ml-auto text-blue-600 font-normal">
+                        Kepercayaan: {aiRecommendation.tingkatKepercayaan}
+                      </span>
+                    </p>
+                    <p className="text-sm text-blue-900 font-medium capitalize">
+                      Keputusan: {aiRecommendation.rekomendasiResolusi}
+                    </p>
+                    <p className="text-xs text-blue-800">{aiRecommendation.alasan}</p>
+                    {aiRecommendation.kompensasiSaran > 0 && (
+                      <p className="text-xs text-blue-700 font-medium">
+                        Kompensasi disarankan: {formatRupiah(aiRecommendation.kompensasiSaran)}
+                      </p>
+                    )}
+                    {aiRecommendation.preseden.length > 0 && (
+                      <div className="text-xs text-blue-700">
+                        <p className="font-medium">Preseden:</p>
+                        <ul className="list-disc list-inside">
+                          {aiRecommendation.preseden.map((p, i) => (
+                            <li key={i}>{p}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Form Resolusi */}
             {selectedDispute?.status !== 'selesai' && (

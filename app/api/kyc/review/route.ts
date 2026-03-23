@@ -68,15 +68,21 @@ export async function POST(request: NextRequest) {
 
     const newStatus = statusMap[action]
 
-    // Update user kyc_status
+    // Update user kyc_status (and is_verified + trust on approve)
+    const userUpdate: Record<string, unknown> = {
+      kyc_status: newStatus,
+      kyc_reviewed_at: new Date().toISOString(),
+      kyc_reviewer_id: adminId || null,
+      kyc_reviewer_notes: notes || null,
+    }
+
+    if (action === 'approve') {
+      userUpdate.is_verified = true
+    }
+
     const { error: updateError } = await supabase
       .from('users')
-      .update({
-        kyc_status: newStatus,
-        kyc_reviewed_at: new Date().toISOString(),
-        kyc_reviewer_id: adminId || null,
-        kyc_reviewer_notes: notes || null,
-      })
+      .update(userUpdate)
       .eq('id', userId)
 
     if (updateError) {
@@ -93,6 +99,13 @@ export async function POST(request: NextRequest) {
         .from('kyc_documents')
         .update({ status: 'verified', reviewed_at: new Date().toISOString() })
         .eq('user_id', userId)
+
+      // Update trust_level on kyc_submissions
+      await supabase
+        .from('kyc_submissions')
+        .update({ trust_level: 'verified' })
+        .eq('user_id', userId)
+        .eq('status', 'pending')
     } else if (action === 'reject') {
       await supabase
         .from('kyc_documents')

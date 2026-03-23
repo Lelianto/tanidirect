@@ -423,6 +423,23 @@ export interface OnboardingChecklist {
 }
 
 // ============ SMART CATALOG ============
+// ============ AI RESPONSE TYPES ============
+export interface DisputeRecommendationResponse {
+  rekomendasiResolusi: 'kompensasi' | 'tolak' | 'mediasi' | 'eskalasi'
+  kompensasiSaran: number
+  alasan: string
+  preseden: string[]
+  tingkatKepercayaan: 'tinggi' | 'sedang' | 'rendah'
+}
+
+export interface DashboardInsightResponse {
+  ringkasan: string
+  insights: Array<{ judul: string; deskripsi: string; prioritas: 'tinggi' | 'sedang' | 'rendah' }>
+  peringatan: Array<{ judul: string; deskripsi: string }>
+  rekomendasiAksi: Array<{ aksi: string; alasan: string; prioritas: 'tinggi' | 'sedang' | 'rendah' }>
+}
+
+// ============ SMART CATALOG ============
 export interface KatalogKomoditas {
   id: string
   nama: string

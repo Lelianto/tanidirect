@@ -76,6 +76,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // If approved, calculate and set komisi_platform (2%) on the transaction
+    if (action === 'approved' && qa.transaksi_id) {
+      const { data: tx } = await supabase
+        .from('transaksi')
+        .select('total_nilai')
+        .eq('id', qa.transaksi_id)
+        .single()
+
+      if (tx?.total_nilai) {
+        const komisi = Number(tx.total_nilai) * 0.02
+        await supabase
+          .from('transaksi')
+          .update({ komisi_platform: komisi })
+          .eq('id', qa.transaksi_id)
+      }
+    }
+
     // Get poktan ketua for notification
     if (qa.poktan_id) {
       const { data: poktan } = await supabase
