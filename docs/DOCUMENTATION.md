@@ -24,8 +24,9 @@
 16. [Flow: KYC & Trust Level](#16-flow-kyc--trust-level)
 17. [Flow: Logistik](#17-flow-logistik)
 18. [Fitur AI](#18-fitur-ai)
-19. [Konfigurasi & Environment](#19-konfigurasi--environment)
-20. [Ringkasan Fitur per Role](#20-ringkasan-fitur-per-role)
+19. [Pengaturan Platform](#19-pengaturan-platform)
+20. [Konfigurasi & Environment](#20-konfigurasi--environment)
+21. [Ringkasan Fitur per Role](#21-ringkasan-fitur-per-role)
 
 ---
 
@@ -311,6 +312,8 @@ tanidirect/
 | `sop_agreements` | Persetujuan SOP per user |
 | `dispute_evidence` | Bukti lampiran sengketa |
 | `dispute_timeline` | Timeline aksi sengketa |
+| `ai_cache` | Cache response AI (Groq) per endpoint |
+| `platform_config` | Konfigurasi platform (rekening escrow, QRIS) |
 
 ### Row-Level Security (RLS)
 
@@ -387,6 +390,7 @@ Semua tabel dilindungi RLS:
 | `/admin/kredit` | Review pengajuan kredit |
 | `/admin/compliance` | Monitoring compliance |
 | `/admin/onboarding` | Tracking onboarding user baru |
+| `/admin/settings` | Pengaturan rekening escrow & upload QRIS |
 
 ---
 
@@ -445,6 +449,8 @@ Semua tabel dilindungi RLS:
 | `POST` | `/api/ai/credit-score` | Hitung credit score petani |
 | `POST` | `/api/ai/price-prediction` | Prediksi tren harga |
 | `POST` | `/api/ai/anomaly` | Deteksi anomali behavior |
+| `POST` | `/api/ai/dispute-recommendation` | Rekomendasi resolusi sengketa |
+| `POST` | `/api/ai/dashboard-insight` | Insight dashboard platform |
 
 ### KYC (`/api/kyc/`)
 
@@ -476,6 +482,9 @@ Semua tabel dilindungi RLS:
 | `GET` | `/api/admin/transaksi` | Semua transaksi |
 | `GET` | `/api/admin/kyc/queue` | Antrian KYC pending |
 | `GET` | `/api/admin/kyc/audit` | Audit log KYC |
+| `GET` | `/api/admin/settings` | Ambil konfigurasi platform |
+| `PUT` | `/api/admin/settings` | Update konfigurasi (rekening, dll) |
+| `POST` | `/api/admin/settings/qris-upload` | Upload gambar QRIS statis |
 
 ### Lainnya
 
@@ -1117,6 +1126,37 @@ Transaksi dikonfirmasi
 
 Semua fitur AI menggunakan **Groq** dengan model **LLaMA 3.3 70B Versatile**.
 
+### AI Caching (`lib/groq/cache.ts`)
+
+Semua AI endpoint (kecuali price-prediction yang sudah punya cache sendiri via `prediksi_harga`) menggunakan **DB-based caching** via tabel `ai_cache` di Supabase. Ini mengurangi API calls berulang ke Groq untuk input yang sama.
+
+**Helper functions:**
+- `getCache(endpoint, cacheKey)` — Cek cache, return response atau null jika expired
+- `setCache(endpoint, cacheKey, response, ttlHours)` — Simpan/update cache dengan TTL
+- `invalidateCache(endpoint, cacheKey?)` — Hapus cache per endpoint atau per key
+
+**Tabel `ai_cache`:**
+| Kolom | Tipe | Keterangan |
+|-------|------|------------|
+| `id` | UUID (PK) | Auto-generated |
+| `endpoint` | text | Nama endpoint ('matching', 'credit-score', dll) |
+| `cache_key` | text | Key unik (preOrderId, petaniId, hash, dll) |
+| `response` | JSONB | Full JSON response |
+| `created_at` | timestamptz | Waktu cache dibuat |
+| `expires_at` | timestamptz | Waktu cache expired |
+
+**TTL per endpoint:**
+
+| Endpoint | Cache Key | TTL | Alasan |
+|----------|-----------|-----|--------|
+| `matching` | `preOrderId` | 24 jam | Ranking poktan stabil kecuali data berubah |
+| `credit-score` | `petaniId` | 7 hari | Skor kredit stabil, berubah saat ada transaksi baru |
+| `price-prediction` | — | 7 hari | Sudah punya cache via `prediksi_harga` (tidak pakai `ai_cache`) |
+| `anomaly` | `poktanId` | 6 jam | Data transaksi & QA berubah, tapi tidak perlu real-time |
+| `dispute-recommendation` | `disputeId` | 24 jam | Rekomendasi stabil kecuali ada bukti baru |
+| `dashboard-insight` | `"platform"` | 1 jam | Data global, berubah perlahan |
+| `qa-notes` | MD5(`catatan+komoditas+grade`) | 30 hari | Input identik = output identik |
+
 ### 1. AI Matching (`/api/ai/matching`)
 
 **Tujuan:** Mencari poktan terbaik untuk memenuhi pre-order supplier.
@@ -1165,9 +1205,66 @@ Semua fitur AI menggunakan **Groq** dengan model **LLaMA 3.3 70B Versatile**.
 
 **Tujuan:** Deteksi perilaku mencurigakan (fraud, manipulasi volume, dll).
 
+### 6. AI Dispute Recommendation (`/api/ai/dispute-recommendation`)
+
+**Tujuan:** Memberikan rekomendasi resolusi sengketa berdasarkan data dispute, bukti, timeline, QA, dan preseden kasus serupa.
+
+**Output:** Rekomendasi resolusi (kompensasi/tolak/mediasi/eskalasi), saran kompensasi, alasan, preseden, dan tingkat kepercayaan.
+
+### 7. AI Dashboard Insight (`/api/ai/dashboard-insight`)
+
+**Tujuan:** Generate executive summary dan insight dari data platform (transaksi, dispute, anomali, QA, kredit, pre-order).
+
+**Output:** Ringkasan eksekutif, key insights, peringatan, dan rekomendasi aksi.
+
 ---
 
-## 19. Konfigurasi & Environment
+## 19. Pengaturan Platform
+
+Admin bisa mengelola konfigurasi platform via halaman `/admin/settings`.
+
+### Rekening Escrow Taninesia
+
+Rekening bank yang digunakan untuk menerima pembayaran escrow dari supplier sebelum dana dicairkan ke poktan/petani.
+
+**Konfigurasi:**
+| Field | Deskripsi |
+|-------|-----------|
+| `bank` | Nama bank (BCA, BRI, Mandiri, dll) |
+| `nomor` | Nomor rekening |
+| `atas_nama` | Nama pemilik rekening (PT Taninesia Digital) |
+
+### QRIS Statis
+
+Admin bisa upload gambar QRIS statis yang ditampilkan ke supplier saat checkout.
+
+**Spesifikasi upload:**
+- Format: JPG, PNG, WebP
+- Max size: 2MB
+- Storage: Supabase bucket `platform-assets`
+
+### Database: `platform_config`
+
+Tabel key-value generic untuk konfigurasi platform.
+
+| Kolom | Tipe | Keterangan |
+|-------|------|------------|
+| `key` | text (PK) | Key konfigurasi (`rekening_escrow`, `qris`) |
+| `value` | JSONB | Nilai konfigurasi |
+| `updated_at` | timestamptz | Terakhir diupdate |
+| `updated_by` | UUID (FK → users) | Admin yang mengupdate |
+
+### API Endpoints
+
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| `GET` | `/api/admin/settings` | Ambil semua konfigurasi platform |
+| `PUT` | `/api/admin/settings` | Update konfigurasi (key + value) |
+| `POST` | `/api/admin/settings/qris-upload` | Upload gambar QRIS (FormData: file, admin_id) |
+
+---
+
+## 20. Konfigurasi & Environment
 
 ### Environment Variables (`.env.local`)
 
@@ -1192,6 +1289,7 @@ DIDIT_WORKFLOW_ID=...
 | `kyc-documents` | Dokumen KYC (KTP, selfie, NPWP) |
 | `qa-photos` | Foto inspeksi QA (batch, detail, timbangan) |
 | `dispute-evidence` | Bukti pendukung sengketa |
+| `platform-assets` | Aset platform (QRIS, logo, dll) |
 
 ### Scripts (`package.json`)
 
@@ -1206,7 +1304,7 @@ DIDIT_WORKFLOW_ID=...
 
 ---
 
-## 20. Ringkasan Fitur per Role
+## 21. Ringkasan Fitur per Role
 
 ### Petani (Anggota Kelompok Tani)
 
@@ -1256,6 +1354,7 @@ DIDIT_WORKFLOW_ID=...
 | Compliance | Monitoring kepatuhan |
 | Onboarding | Tracking progres user baru |
 | SOP Dispute | Panduan resolusi sengketa sesuai SOP |
+| Pengaturan | Atur rekening escrow Taninesia & upload QRIS statis |
 
 ### Fitur Platform (Cross-Role)
 
@@ -1273,6 +1372,7 @@ DIDIT_WORKFLOW_ID=...
 | Session Persistence | Token-based auth dengan auto-refresh |
 | Dispute SLA 7 Hari | Batas waktu penyelesaian sengketa |
 | GPS Logistics | Tracking 3-tier (first/middle/last mile) |
+| AI Caching | DB-based cache untuk semua AI endpoint, hemat API calls |
 
 ---
 
