@@ -47,7 +47,7 @@ export default function AdminPengirimanPage() {
   const user = useAuthStore((s) => s.user)
   const [pengirimanList, setPengirimanList] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [filterStatus, setFilterStatus] = useState<string>('Semua Status')
 
   // Event dialog
   const [eventDialogOpen, setEventDialogOpen] = useState(false)
@@ -60,7 +60,7 @@ export default function AdminPengirimanPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const url = filterStatus === 'all'
+      const url = filterStatus === 'Semua Status'
         ? '/api/admin/pengiriman'
         : `/api/admin/pengiriman?status=${filterStatus}`
       const res = await fetch(url)
@@ -128,7 +128,7 @@ export default function AdminPengirimanPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Semua Status</SelectItem>
+              <SelectItem value="Semua Status">Semua Status</SelectItem>
               {STATUS_ORDER.map(s => (
                 <SelectItem key={s} value={s}>{STATUS_CONFIG[s].label}</SelectItem>
               ))}

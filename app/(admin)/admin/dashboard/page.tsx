@@ -99,15 +99,11 @@ export default function AdminDashboard() {
             title="Volume Bulan Ini"
             value={`${(stats.total_volume / 1000).toFixed(1)} ton`}
             icon={<TrendingUp className="h-5 w-5" />}
-            trend="up"
-            trendValue="+12%"
           />
           <StatCard
             title="Pendapatan Komisi"
             value={formatRupiah(stats.total_komisi)}
             icon={<Wallet className="h-5 w-5" />}
-            trend="up"
-            trendValue="+18%"
           />
         </div>
 

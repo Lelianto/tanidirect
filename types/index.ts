@@ -523,6 +523,12 @@ export interface CatatanPanen {
   harga_per_kg?: number
   foto_urls: string[]
   catatan?: string
+  varietas?: string
+  min_order_kg?: number
+  kemasan?: string
+  tersedia_sampai?: string
+  metode_simpan?: string
+  sertifikasi?: string
   status: StatusPanen
   published_at?: string
   created_at: string
@@ -594,6 +600,12 @@ export interface KatalogKomoditas {
   margin_persen: number
   foto_url?: string
   catatan_panen_id?: string
+  varietas?: string
+  min_order_kg?: number
+  kemasan?: string
+  tersedia_sampai?: string
+  metode_simpan?: string
+  sertifikasi?: string
   poktan?: {
     id: string
     nama_poktan: string

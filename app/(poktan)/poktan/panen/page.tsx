@@ -22,6 +22,7 @@ import { toast } from 'sonner'
 import {
   Store, Plus, Send, Trash2,
   Loader2, Wheat, Calendar, Weight, ImagePlus, X,
+  Package, Snowflake, Award, ShoppingCart, Clock,
 } from 'lucide-react'
 import Image from 'next/image'
 import type { CatatanPanen, StatusPanen } from '@/types'
@@ -46,6 +47,7 @@ export default function PoktanPanenPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [form, setForm] = useState({
     komoditas: '', grade: 'B', volume_panen_kg: '', tanggal_panen: '', catatan: '',
+    varietas: '', min_order_kg: '', kemasan: '', tersedia_sampai: '', metode_simpan: '', sertifikasi: '',
   })
   const [fotoFiles, setFotoFiles] = useState<File[]>([])
   const [fotoPreviews, setFotoPreviews] = useState<string[]>([])
@@ -158,13 +160,20 @@ export default function PoktanPanenPage() {
           tanggal_panen: form.tanggal_panen,
           catatan: form.catatan || null,
           foto_urls: uploadData.foto_urls,
+          varietas: form.varietas || null,
+          min_order_kg: form.min_order_kg ? parseFloat(form.min_order_kg) : null,
+          kemasan: form.kemasan || null,
+          tersedia_sampai: form.tersedia_sampai || null,
+          metode_simpan: form.metode_simpan || null,
+          sertifikasi: form.sertifikasi || null,
         }),
       })
       const data = await res.json()
       if (data.success) {
         toast.success('Catatan panen berhasil dibuat')
         setCreateOpen(false)
-        setForm({ komoditas: '', grade: 'B', volume_panen_kg: '', tanggal_panen: '', catatan: '' })
+        setForm({ komoditas: '', grade: 'B', volume_panen_kg: '', tanggal_panen: '', catatan: '',
+          varietas: '', min_order_kg: '', kemasan: '', tersedia_sampai: '', metode_simpan: '', sertifikasi: '' })
         setFotoFiles([])
         setFotoPreviews([])
         fetchData()
@@ -350,6 +359,45 @@ export default function PoktanPanenPage() {
                       </span>
                     </div>
 
+                    {/* Extra detail badges */}
+                    {(item.varietas || item.kemasan || item.min_order_kg || item.sertifikasi || item.metode_simpan || item.tersedia_sampai) && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {item.varietas && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">{item.varietas}</Badge>
+                        )}
+                        {item.min_order_kg && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                            <ShoppingCart className="h-2.5 w-2.5 mr-0.5" />
+                            MOQ {Number(item.min_order_kg).toLocaleString('id-ID')} kg
+                          </Badge>
+                        )}
+                        {item.kemasan && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                            <Package className="h-2.5 w-2.5 mr-0.5" />
+                            {item.kemasan.replace('_', ' ')}
+                          </Badge>
+                        )}
+                        {item.metode_simpan && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                            <Snowflake className="h-2.5 w-2.5 mr-0.5" />
+                            {item.metode_simpan.replace(/_/g, ' ')}
+                          </Badge>
+                        )}
+                        {item.sertifikasi && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                            <Award className="h-2.5 w-2.5 mr-0.5" />
+                            {item.sertifikasi === 'gap' ? 'GAP' : item.sertifikasi.replace('_', ' ')}
+                          </Badge>
+                        )}
+                        {item.tersedia_sampai && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                            <Clock className="h-2.5 w-2.5 mr-0.5" />
+                            s/d {item.tersedia_sampai}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+
                     {item.foto_urls && item.foto_urls.length > 0 && (
                       <div className="flex gap-1.5">
                         {item.foto_urls.map((url, i) => (
@@ -477,6 +525,77 @@ export default function PoktanPanenPage() {
                 value={form.tanggal_panen}
                 onChange={(e) => setForm({ ...form, tanggal_panen: e.target.value })}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Varietas (opsional)</Label>
+              <Input
+                placeholder="Contoh: Keriting, TM999, Granola"
+                value={form.varietas}
+                onChange={(e) => setForm({ ...form, varietas: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Min. Order / MOQ (kg)</Label>
+                <Input
+                  type="number"
+                  placeholder="500"
+                  value={form.min_order_kg}
+                  onChange={(e) => setForm({ ...form, min_order_kg: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Kemasan</Label>
+                <Select value={form.kemasan} onValueChange={(v) => setForm({ ...form, kemasan: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih kemasan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="karung">Karung</SelectItem>
+                    <SelectItem value="peti_kayu">Peti Kayu</SelectItem>
+                    <SelectItem value="kardus">Kardus</SelectItem>
+                    <SelectItem value="plastik">Plastik</SelectItem>
+                    <SelectItem value="curah">Curah (tanpa kemasan)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Tersedia Sampai</Label>
+                <Input
+                  type="date"
+                  value={form.tersedia_sampai}
+                  onChange={(e) => setForm({ ...form, tersedia_sampai: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Metode Simpan</Label>
+                <Select value={form.metode_simpan} onValueChange={(v) => setForm({ ...form, metode_simpan: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih metode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gudang_biasa">Gudang Biasa</SelectItem>
+                    <SelectItem value="cold_storage">Cold Storage</SelectItem>
+                    <SelectItem value="ruang_kering">Ruang Kering</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Sertifikasi (opsional)</Label>
+              <Select value={form.sertifikasi} onValueChange={(v) => setForm({ ...form, sertifikasi: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih sertifikasi" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="non_organik">Non-Organik</SelectItem>
+                  <SelectItem value="organik">Organik</SelectItem>
+                  <SelectItem value="gap">GAP (Good Agricultural Practices)</SelectItem>
+                  <SelectItem value="prima3">Prima 3</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>Catatan (opsional)</Label>

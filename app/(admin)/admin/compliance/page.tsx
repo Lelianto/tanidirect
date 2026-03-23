@@ -13,9 +13,10 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
 import { formatTanggal } from '@/lib/utils/date'
+import { toast } from 'sonner'
 import type { AnomaliLog } from '@/types'
 import {
-  ShieldAlert, AlertTriangle, Clock, CheckCircle2, FileWarning,
+  ShieldAlert, AlertTriangle, Clock, CheckCircle2, FileWarning, Loader2,
 } from 'lucide-react'
 
 export default function AdminCompliancePage() {
@@ -25,6 +26,7 @@ export default function AdminCompliancePage() {
   const [catatan, setCatatan] = useState('')
   const [keputusan, setKeputusan] = useState('')
 
+  const [submitting, setSubmitting] = useState(false)
   const [anomaliWithPoktan, setAnomaliWithPoktan] = useState<(AnomaliLog & { poktan?: any })[]>([])
 
   useEffect(() => {
@@ -231,9 +233,38 @@ export default function AdminCompliancePage() {
             </Button>
             <Button
               className="bg-tani-green hover:bg-tani-green/90"
-              disabled={!keputusan || !catatan}
-              onClick={() => setDialogOpen(false)}
+              disabled={!keputusan || !catatan || submitting}
+              onClick={async () => {
+                if (!selectedAnomali) return
+                setSubmitting(true)
+                try {
+                  const res = await fetch('/api/admin/compliance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      anomali_id: selectedAnomali.id,
+                      keputusan,
+                      catatan,
+                    }),
+                  })
+                  const data = await res.json()
+                  if (!res.ok) throw new Error(data.error || 'Gagal memproses')
+                  setAnomaliWithPoktan((prev) =>
+                    prev.map((a) => a.id === selectedAnomali.id
+                      ? { ...a, ...data.anomali, poktan: a.poktan }
+                      : a
+                    )
+                  )
+                  toast.success('Keputusan compliance berhasil disimpan')
+                  setDialogOpen(false)
+                } catch (error) {
+                  toast.error(error instanceof Error ? error.message : 'Gagal menyimpan keputusan')
+                } finally {
+                  setSubmitting(false)
+                }
+              }}
             >
+              {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
               Simpan Keputusan
             </Button>
           </DialogFooter>

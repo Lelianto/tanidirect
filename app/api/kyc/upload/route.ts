@@ -127,10 +127,10 @@ export async function POST(request: NextRequest) {
           .eq('id', userId)
       }
 
-      // Fetch user role for kyc_submissions
+      // Fetch user profile for kyc_submissions & notifications
       const { data: userProfile } = await supabase
         .from('users')
-        .select('role')
+        .select('role, nama_lengkap')
         .eq('id', userId)
         .single()
 
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
         const notifications = admins.map((admin) => ({
           user_id: admin.id,
           judul: `Dokumen KYC Layer ${layer} Baru`,
-          pesan: `User ${userId} telah mengirimkan dokumen KYC Layer ${layer} untuk direview.`,
+          pesan: `${userProfile?.nama_lengkap || 'User'} telah mengirimkan dokumen KYC Layer ${layer} untuk direview.`,
           tipe: 'kyc_review',
           link: '/admin/kyc',
           is_read: false,

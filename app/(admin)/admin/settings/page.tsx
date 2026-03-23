@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -17,7 +17,7 @@ import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Landmark, QrCode, Upload, Loader2, CheckCircle2, ImageIcon, Leaf, Plus, Pencil, Trash2 } from 'lucide-react'
+import { Landmark, QrCode, Upload, Loader2, CheckCircle2, ImageIcon, Leaf, Plus, Pencil, Trash2, Search } from 'lucide-react'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -63,6 +63,28 @@ export default function AdminSettingsPage() {
     catatan: '',
   })
   const [savingKomoditas, setSavingKomoditas] = useState(false)
+  const [filterNama, setFilterNama] = useState('')
+  const [filterKategori, setFilterKategori] = useState('Semua')
+  const [filterZona, setFilterZona] = useState('Semua')
+  const [filterColdChain, setFilterColdChain] = useState('Semua')
+
+  const kategoriOptions = useMemo(() => {
+    const set = new Set(komoditasList.map((k) => k.kategori).filter(Boolean) as string[])
+    return ['Semua', ...Array.from(set).sort()]
+  }, [komoditasList])
+
+  const filteredKomoditas = useMemo(() => {
+    return komoditasList.filter((k) => {
+      if (filterNama && !k.nama.toLowerCase().includes(filterNama.toLowerCase())) return false
+      if (filterKategori !== 'Semua' && k.kategori !== filterKategori) return false
+      if (filterZona !== 'Semua' && k.zona !== filterZona) return false
+      if (filterColdChain !== 'Semua') {
+        const needsCold = filterColdChain === 'ya'
+        if (k.perlu_cold_chain !== needsCold) return false
+      }
+      return true
+    })
+  }, [komoditasList, filterNama, filterKategori, filterZona, filterColdChain])
 
   useEffect(() => {
     fetchConfig()
@@ -379,8 +401,59 @@ export default function AdminSettingsPage() {
               Kelola data kelayakan kirim per komoditas. Komoditas yang tidak layak antar pulau akan disembunyikan dari katalog supplier di pulau berbeda.
             </p>
 
+            {/* Filters */}
+            {komoditasList.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Cari nama..."
+                    className="pl-8 h-9 w-[160px] text-sm"
+                    value={filterNama}
+                    onChange={(e) => setFilterNama(e.target.value)}
+                  />
+                </div>
+                <Select value={filterKategori} onValueChange={(v: string | null) => setFilterKategori(v ?? 'Semua')}>
+                  <SelectTrigger className="w-[140px] h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {kategoriOptions.map((o) => (
+                      <SelectItem key={o} value={o}>{o === 'Semua' ? 'Semua Kategori' : o}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={filterZona} onValueChange={(v: string | null) => setFilterZona(v ?? 'Semua')}>
+                  <SelectTrigger className="w-[160px] h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Semua">Semua Zona</SelectItem>
+                    <SelectItem value="antar_pulau">Antar Pulau</SelectItem>
+                    <SelectItem value="cold_chain">Cold Chain</SelectItem>
+                    <SelectItem value="lokal_saja">Lokal Saja</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={filterColdChain} onValueChange={(v: string | null) => setFilterColdChain(v ?? 'Semua')}>
+                  <SelectTrigger className="w-[150px] h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Semua">Cold Chain: Semua</SelectItem>
+                    <SelectItem value="ya">Perlu Cold Chain</SelectItem>
+                    <SelectItem value="tidak">Tanpa Cold Chain</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span className="text-xs text-muted-foreground self-center">
+                  {filteredKomoditas.length} dari {komoditasList.length}
+                </span>
+              </div>
+            )}
+
             {komoditasList.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">Belum ada konfigurasi komoditas</p>
+            ) : filteredKomoditas.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">Tidak ada komoditas yang cocok dengan filter</p>
             ) : (
               <div className="border rounded-lg overflow-auto">
                 <Table>
@@ -397,7 +470,7 @@ export default function AdminSettingsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {komoditasList.map((item) => {
+                    {filteredKomoditas.map((item) => {
                       const zonaConf = ZONA_LABELS[item.zona] || ZONA_LABELS.antar_pulau
                       return (
                         <TableRow key={item.id}>

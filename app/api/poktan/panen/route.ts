@@ -59,7 +59,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { user_id, komoditas, grade, volume_panen_kg, tanggal_panen, foto_urls, catatan, kontribusi } = body
+    const { user_id, komoditas, grade, volume_panen_kg, tanggal_panen, foto_urls, catatan, kontribusi,
+      varietas, min_order_kg, kemasan, tersedia_sampai, metode_simpan, sertifikasi } = body
 
     if (!user_id || !komoditas || !volume_panen_kg || !tanggal_panen) {
       return NextResponse.json({ error: 'Field wajib: user_id, komoditas, volume_panen_kg, tanggal_panen' }, { status: 400 })
@@ -107,6 +108,12 @@ export async function POST(request: NextRequest) {
         tanggal_panen,
         foto_urls: foto_urls,
         catatan: catatan || null,
+        varietas: varietas || null,
+        min_order_kg: min_order_kg || null,
+        kemasan: kemasan || null,
+        tersedia_sampai: tersedia_sampai || null,
+        metode_simpan: metode_simpan || null,
+        sertifikasi: sertifikasi || null,
         status: 'draft',
       })
       .select()

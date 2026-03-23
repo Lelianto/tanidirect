@@ -10,16 +10,17 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from '@/components/ui/dialog'
 import { formatRupiah } from '@/lib/utils/currency'
 import {
-  Building2, MoreVertical, Eye, CheckCircle, Star, MapPin, ShieldCheck, Package,
+  Building2, Eye, Star, MapPin, ShieldCheck, Package, Phone, User,
 } from 'lucide-react'
 
 export default function AdminSupplierPage() {
   const [filterVerified, setFilterVerified] = useState('all')
   const [allSuppliers, setAllSuppliers] = useState<any[]>([])
+  const [selectedSupplier, setSelectedSupplier] = useState<any | null>(null)
 
   useEffect(() => {
     fetch('/api/admin/supplier')
@@ -119,19 +120,9 @@ export default function AdminSupplierPage() {
                     </TableCell>
                     <TableCell className="text-center font-medium">{s.total_preorder}</TableCell>
                     <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="h-8 w-8" />}>
-                            <MoreVertical className="h-4 w-4" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Eye className="h-4 w-4 mr-2" /> Detail
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <CheckCircle className="h-4 w-4 mr-2" /> Verifikasi
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Button variant="ghost" size="sm" className="text-xs" onClick={() => setSelectedSupplier(s)}>
+                        <Eye className="h-4 w-4 mr-1" /> Detail
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -196,14 +187,9 @@ export default function AdminSupplierPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1 text-xs">
-                    <Eye className="h-3 w-3 mr-1" /> Detail
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1 text-xs">
-                    <CheckCircle className="h-3 w-3 mr-1" /> Verifikasi
-                  </Button>
-                </div>
+                <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => setSelectedSupplier(s)}>
+                  <Eye className="h-3 w-3 mr-1" /> Detail
+                </Button>
               </CardContent>
             </Card>
           ))}
@@ -216,6 +202,119 @@ export default function AdminSupplierPage() {
           </div>
         )}
       </div>
+
+      {/* Detail Supplier Dialog */}
+      <Dialog open={!!selectedSupplier} onOpenChange={() => setSelectedSupplier(null)}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-[family-name:var(--font-heading)]">
+              {selectedSupplier?.nama_perusahaan}
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              {selectedSupplier?.jenis_usaha || '-'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedSupplier && (
+            <div className="space-y-5">
+              {/* Info ringkas */}
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="bg-gray-50 rounded-lg p-2.5">
+                  <p className="text-muted-foreground">Rating</p>
+                  <div className="flex items-center justify-center gap-1">
+                    <Star className="h-3 w-3 fill-tani-amber text-tani-amber" />
+                    <p className="font-bold text-sm">{selectedSupplier.rating}</p>
+                  </div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2.5">
+                  <p className="text-muted-foreground">Pre-Orders</p>
+                  <p className="font-bold text-sm">{selectedSupplier.total_preorder}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2.5">
+                  <p className="text-muted-foreground">Deposit</p>
+                  <p className="font-bold text-sm text-[10px]">{formatRupiah(selectedSupplier.deposit_escrow)}</p>
+                </div>
+              </div>
+
+              {/* Detail Info */}
+              <div className="space-y-3">
+                {selectedSupplier.npwp && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">NPWP</p>
+                    <p className="text-sm font-medium">{selectedSupplier.npwp}</p>
+                  </div>
+                )}
+
+                {selectedSupplier.kapasitas_kg_per_bulan && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Kapasitas</p>
+                    <p className="text-sm font-medium">{selectedSupplier.kapasitas_kg_per_bulan.toLocaleString('id-ID')} kg/bulan</p>
+                  </div>
+                )}
+
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Status</p>
+                  {selectedSupplier.is_verified ? (
+                    <Badge className="bg-green-100 text-green-800 hover:bg-green-100 text-xs mt-1">
+                      <ShieldCheck className="h-3 w-3 mr-1" />
+                      Terverifikasi
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-xs text-muted-foreground mt-1">
+                      Belum Verifikasi
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Wilayah Operasi */}
+              {selectedSupplier.wilayah_operasi?.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1.5">Wilayah Operasi</p>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedSupplier.wilayah_operasi.map((w: string) => (
+                      <Badge key={w} variant="outline" className="text-xs">
+                        <MapPin className="h-2.5 w-2.5 mr-0.5" />
+                        {w}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* PIC / User Info */}
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2">Penanggung Jawab</p>
+                {selectedSupplier.user ? (
+                  <Card className="shadow-sm">
+                    <CardContent className="p-3 flex items-center gap-3">
+                      <div className="flex items-center justify-center w-9 h-9 rounded-full bg-tani-blue/10 text-tani-blue shrink-0">
+                        <User className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm truncate">{selectedSupplier.user.nama_lengkap}</p>
+                        {selectedSupplier.user.no_hp && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            {selectedSupplier.user.no_hp}
+                          </p>
+                        )}
+                        {selectedSupplier.user.kyc_status && (
+                          <p className="text-xs text-muted-foreground">
+                            KYC: {selectedSupplier.user.kyc_status}
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Data PIC tidak tersedia</p>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

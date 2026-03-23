@@ -20,6 +20,7 @@ import { useAuthStore } from '@/store'
 import { formatRupiah, formatKg, formatNumber } from '@/lib/utils/currency'
 import { formatTanggalSingkat } from '@/lib/utils/date'
 import { toast } from 'sonner'
+import { useKomoditasConfig } from '@/hooks/useKomoditasConfig'
 import {
   ArrowLeftRight, Scale, Coins, Package, Loader2,
   CheckCircle, Banknote,
@@ -36,10 +37,11 @@ const STATUS_OPTIONS = [
   { value: 'dibatalkan', label: 'Dibatalkan' },
   { value: 'sengketa', label: 'Sengketa' },
 ]
-const KOMODITAS_OPTIONS = ['Semua Komoditas', 'Tomat', 'Cabai Merah', 'Kubis', 'Wortel', 'Kentang']
 
 export default function AdminTransaksiPage() {
   const adminUser = useAuthStore((s) => s.user)
+  const { namaList: komoditasList } = useKomoditasConfig()
+  const komoditasOptions = ['Semua Komoditas', ...komoditasList]
   const [filterStatus, setFilterStatus] = useState('Semua Status')
   const [filterKomoditas, setFilterKomoditas] = useState('Semua Komoditas')
   const [allTransaksi, setAllTransaksi] = useState<any[]>([])
@@ -147,8 +149,6 @@ export default function AdminTransaksiPage() {
             title="Total Komisi"
             value={formatRupiah(totalKomisi)}
             icon={<Coins className="h-5 w-5" />}
-            trend="up"
-            trendValue="+8%"
           />
         </div>
 
@@ -170,7 +170,7 @@ export default function AdminTransaksiPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {KOMODITAS_OPTIONS.map((o) => (
+              {komoditasOptions.map((o) => (
                 <SelectItem key={o} value={o}>{o}</SelectItem>
               ))}
             </SelectContent>

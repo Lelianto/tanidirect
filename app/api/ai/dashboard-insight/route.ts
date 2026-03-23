@@ -72,7 +72,7 @@ export async function POST() {
     const totalVolumePO = preOrderList.reduce((sum, p: any) => sum + (p.volume_kg || 0), 0)
 
     try {
-      const prompt = `Kamu adalah analis bisnis AI platform pertanian TaniDirect. Berikan executive summary dan insight dari data platform berikut.
+      const prompt = `Kamu adalah analis bisnis AI untuk platform pertanian bernama "Taninesia". PENTING: Nama platform adalah "Taninesia", BUKAN "TaniDirect" atau nama lain. Selalu gunakan nama "Taninesia" saat menyebut platform ini. Berikan executive summary dan insight dari data platform berikut.
 
 Statistik Transaksi (100 terakhir):
 ${Object.entries(txByStatus).map(([s, c]) => `- ${s}: ${c}`).join('\n')}

@@ -33,6 +33,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   onboarding: Rocket,
   sop: ScrollText,
   katalog: Store,
+  akun: User,
   settings: Settings,
 }
 
@@ -79,6 +80,7 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: 'Dashboard', href: '/admin/dashboard', icon: 'dashboard' },
     { label: 'Poktan', href: '/admin/poktan', icon: 'poktan' },
     { label: 'Supplier', href: '/admin/supplier', icon: 'supplier' },
+    { label: 'Akun Pengguna', href: '/admin/akun', icon: 'akun' },
     { label: 'Pembayaran', href: '/admin/pembayaran', icon: 'kredit' },
     { label: 'Pencairan Poktan', href: '/admin/pencairan-poktan', icon: 'kredit' },
     { label: 'Pengiriman', href: '/admin/pengiriman', icon: 'logistik' },

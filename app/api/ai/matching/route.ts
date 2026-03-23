@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      const prompt = `Kamu adalah sistem matching platform pertanian TaniDirect.
+      const prompt = `Kamu adalah sistem matching untuk platform pertanian bernama "Taninesia".
 
 Data Pre-Order:
 - Komoditas: ${preOrder.komoditas}

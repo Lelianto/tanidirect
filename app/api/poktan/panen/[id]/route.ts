@@ -121,6 +121,12 @@ export async function PATCH(
             skor_harga: skorHarga,
             margin_persen: Math.max(0, marginPersen),
             foto_url: record.foto_urls?.[0] || null,
+            varietas: record.varietas || null,
+            min_order_kg: record.min_order_kg || null,
+            kemasan: record.kemasan || null,
+            tersedia_sampai: record.tersedia_sampai || null,
+            metode_simpan: record.metode_simpan || null,
+            sertifikasi: record.sertifikasi || null,
           },
           { onConflict: 'catatan_panen_id' }
         )
@@ -161,7 +167,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'Hanya draft yang bisa diedit' }, { status: 400 })
     }
 
-    const allowedFields = ['komoditas', 'grade', 'volume_panen_kg', 'tanggal_panen', 'harga_per_kg', 'foto_urls', 'catatan']
+    const allowedFields = ['komoditas', 'grade', 'volume_panen_kg', 'tanggal_panen', 'harga_per_kg', 'foto_urls', 'catatan',
+      'varietas', 'min_order_kg', 'kemasan', 'tersedia_sampai', 'metode_simpan', 'sertifikasi']
     const updateData: Record<string, unknown> = {}
     for (const key of allowedFields) {
       if (fields[key] !== undefined) {

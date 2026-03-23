@@ -19,8 +19,9 @@ import {
 import { formatRupiah, formatNumber } from '@/lib/utils/currency'
 import { formatTanggal } from '@/lib/utils/date'
 import type { Kredit } from '@/types'
+import { toast } from 'sonner'
 import {
-  CreditCard, Banknote, Clock, Brain, User, FileText, AlertCircle,
+  CreditCard, Banknote, Clock, Brain, User, FileText, AlertCircle, Loader2,
 } from 'lucide-react'
 
 const AI_KATEGORI_COLOR: Record<string, string> = {
@@ -38,6 +39,7 @@ export default function AdminKreditPage() {
   const [reviewJumlah, setReviewJumlah] = useState('')
   const [reviewCatatan, setReviewCatatan] = useState('')
 
+  const [submitting, setSubmitting] = useState(false)
   const [allKredit, setAllKredit] = useState<any[]>([])
 
   useEffect(() => {
@@ -341,9 +343,39 @@ export default function AdminKreditPage() {
                 ? 'bg-tani-red hover:bg-tani-red/90'
                 : 'bg-tani-green hover:bg-tani-green/90'
               }
-              disabled={!reviewKeputusan}
-              onClick={() => setDialogOpen(false)}
+              disabled={!reviewKeputusan || submitting}
+              onClick={async () => {
+                if (!selectedKredit) return
+                setSubmitting(true)
+                try {
+                  const res = await fetch('/api/admin/kredit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      kredit_id: selectedKredit.id,
+                      keputusan: reviewKeputusan,
+                      jumlah_disetujui: reviewKeputusan === 'setujui' ? Number(reviewJumlah) : undefined,
+                      catatan: reviewCatatan,
+                    }),
+                  })
+                  const data = await res.json()
+                  if (!res.ok) throw new Error(data.error || 'Gagal memproses')
+                  setAllKredit((prev) =>
+                    prev.map((k) => k.id === selectedKredit.id
+                      ? { ...k, ...data.kredit, petani: k.petani, poktan: k.poktan }
+                      : k
+                    )
+                  )
+                  toast.success(reviewKeputusan === 'setujui' ? 'Kredit disetujui' : 'Kredit ditolak')
+                  setDialogOpen(false)
+                } catch (error) {
+                  toast.error(error instanceof Error ? error.message : 'Gagal memproses review')
+                } finally {
+                  setSubmitting(false)
+                }
+              }}
             >
+              {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
               {reviewKeputusan === 'tolak' ? 'Tolak Pengajuan' : 'Setujui Kredit'}
             </Button>
           </DialogFooter>

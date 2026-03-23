@@ -10,7 +10,8 @@ import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
 } from 'recharts'
 import Image from 'next/image'
-import { Store, Filter, TrendingUp } from 'lucide-react'
+import { Store, Filter, TrendingUp, Package, Snowflake, Award, ShoppingCart, Clock } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { useAuthStore } from '@/store'
 import type { KatalogKomoditas } from '@/types'
 
@@ -86,6 +87,45 @@ function KomoditasKatalogCard({ item }: { item: KatalogKomoditas }) {
           <p className="text-xs text-muted-foreground">Jadwal panen</p>
           <p className="text-sm font-medium">{item.jadwal_panen}</p>
         </div>
+
+        {/* Extra product details */}
+        {(item.varietas || item.min_order_kg || item.kemasan || item.metode_simpan || item.sertifikasi || item.tersedia_sampai) && (
+          <div className="flex flex-wrap gap-1.5">
+            {item.varietas && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">{item.varietas}</Badge>
+            )}
+            {item.min_order_kg && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                <ShoppingCart className="h-2.5 w-2.5 mr-0.5" />
+                MOQ {Number(item.min_order_kg).toLocaleString('id-ID')} kg
+              </Badge>
+            )}
+            {item.kemasan && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                <Package className="h-2.5 w-2.5 mr-0.5" />
+                {item.kemasan.replace(/_/g, ' ')}
+              </Badge>
+            )}
+            {item.metode_simpan && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                <Snowflake className="h-2.5 w-2.5 mr-0.5" />
+                {item.metode_simpan.replace(/_/g, ' ')}
+              </Badge>
+            )}
+            {item.sertifikasi && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                <Award className="h-2.5 w-2.5 mr-0.5" />
+                {item.sertifikasi === 'gap' ? 'GAP' : item.sertifikasi.replace(/_/g, ' ')}
+              </Badge>
+            )}
+            {item.tersedia_sampai && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                <Clock className="h-2.5 w-2.5 mr-0.5" />
+                s/d {item.tersedia_sampai}
+              </Badge>
+            )}
+          </div>
+        )}
 
         {item.catatan_panen?.catatan && (
           <div>

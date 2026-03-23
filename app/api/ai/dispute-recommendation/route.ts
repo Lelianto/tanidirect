@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     const presedenList = preseden || []
 
     try {
-      const prompt = `Kamu adalah mediator sengketa AI platform pertanian TaniDirect.
+      const prompt = `Kamu adalah mediator sengketa AI untuk platform pertanian bernama "Taninesia".
 
 Detail Dispute:
 - ID: ${dispute.id}

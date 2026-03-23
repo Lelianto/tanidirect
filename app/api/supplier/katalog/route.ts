@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('katalog_komoditas')
-      .select('*, poktan:poktan_id(id, nama_poktan, kabupaten, provinsi), catatan_panen:catatan_panen_id(foto_urls, catatan, tanggal_panen)')
+      .select('*, poktan:poktan_id(id, nama_poktan, kabupaten, provinsi), catatan_panen:catatan_panen_id(foto_urls, catatan, tanggal_panen, varietas, min_order_kg, kemasan, tersedia_sampai, metode_simpan, sertifikasi)')
       .order('skor_kualitas', { ascending: false })
       .limit(50)
 

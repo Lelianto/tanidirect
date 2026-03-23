@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog'
 import { formatTanggal } from '@/lib/utils/date'
 import { formatRupiah } from '@/lib/utils/currency'
+import { toast } from 'sonner'
 import type { Dispute, DisputeRecommendationResponse } from '@/types'
 import {
   AlertTriangle, Clock, FileWarning, Scale, MessageSquare, Sparkles, Loader2,
@@ -31,6 +32,7 @@ export default function AdminDisputePage() {
   const [allDisputes, setAllDisputes] = useState<Dispute[]>([])
   const [aiRecommendation, setAiRecommendation] = useState<DisputeRecommendationResponse | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/disputes')
@@ -369,9 +371,39 @@ export default function AdminDisputePage() {
             {selectedDispute?.status !== 'selesai' && (
               <Button
                 className="bg-tani-green hover:bg-tani-green/90"
-                disabled={!keputusan || !resolusi}
-                onClick={() => setDialogOpen(false)}
+                disabled={!keputusan || !resolusi || submitting}
+                onClick={async () => {
+                  if (!selectedDispute) return
+                  setSubmitting(true)
+                  try {
+                    const res = await fetch('/api/admin/disputes', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        dispute_id: selectedDispute.id,
+                        keputusan,
+                        resolusi,
+                        kompensasi,
+                      }),
+                    })
+                    const data = await res.json()
+                    if (!res.ok) throw new Error(data.error || 'Gagal memproses')
+                    setAllDisputes((prev) =>
+                      prev.map((d) => d.id === selectedDispute.id
+                        ? { ...d, ...data.dispute }
+                        : d
+                      )
+                    )
+                    toast.success('Resolusi dispute berhasil disimpan')
+                    setDialogOpen(false)
+                  } catch (error) {
+                    toast.error(error instanceof Error ? error.message : 'Gagal menyimpan resolusi')
+                  } finally {
+                    setSubmitting(false)
+                  }
+                }}
               >
+                {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
                 Simpan Resolusi
               </Button>
             )}

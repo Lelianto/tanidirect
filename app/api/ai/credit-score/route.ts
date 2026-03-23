@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     const anggotaList = anggota || []
 
     try {
-      const prompt = `Kamu adalah analis kredit AI platform pertanian TaniDirect.
+      const prompt = `Kamu adalah analis kredit AI untuk platform pertanian bernama "Taninesia".
 
 Profil Petani:
 - Nama: ${petani.nama_lengkap}
@@ -121,13 +121,13 @@ function fallbackCreditScore(petani: any, totalTransaksi: number, totalVolume: n
 
   const kategori = skor >= 80 ? 'Sangat Baik'
     : skor >= 65 ? 'Baik'
-    : skor >= 50 ? 'Cukup'
-    : 'Perlu Perhatian'
+      : skor >= 50 ? 'Cukup'
+        : 'Perlu Perhatian'
 
   const batasKredit = skor >= 80 ? 10000000
     : skor >= 65 ? 7500000
-    : skor >= 50 ? 5000000
-    : 2000000
+      : skor >= 50 ? 5000000
+        : 2000000
 
   return NextResponse.json({
     skor,

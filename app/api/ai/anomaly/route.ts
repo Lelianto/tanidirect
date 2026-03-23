@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     const qaList = qaInspeksi || []
 
     try {
-      const prompt = `Kamu adalah sistem deteksi anomali platform pertanian TaniDirect.
+      const prompt = `Kamu adalah sistem deteksi anomali untuk platform pertanian bernama "Taninesia".
 
 Profil Poktan: ${poktan.nama_poktan}
 - Skor QA: ${poktan.skor_qa}/100
@@ -155,7 +155,7 @@ function fallbackAnomaly(poktanId: string, poktan: any, transaksi: any[]) {
     anomalies,
     overallRisk: anomalies.some((a) => a.tingkatRisiko === 'tinggi') ? 'tinggi'
       : anomalies.some((a) => a.tingkatRisiko === 'sedang') ? 'sedang'
-      : 'rendah',
+        : 'rendah',
     rekomendasi: anomalies.length > 0
       ? 'Perlu investigasi lebih lanjut oleh tim compliance.'
       : 'Tidak ditemukan anomali signifikan.',

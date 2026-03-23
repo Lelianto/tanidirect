@@ -58,29 +58,29 @@ const STATS = [
 const STEPS = [
   {
     step: '01',
-    title: 'Daftarkan Kelompok Tani',
-    desc: 'Ketua Poktan mendaftarkan kelompok dan anggota petani, lengkap dengan verifikasi KYC digital.',
+    title: 'Registrasi & Verifikasi',
+    desc: 'Poktan dan Supplier mendaftar, lalu melengkapi verifikasi identitas (KTP, Surat BPP, rekening) secara digital — cepat dan aman.',
     icon: Users,
     color: 'bg-tani-green',
   },
   {
     step: '02',
-    title: 'Quality Assurance',
-    desc: 'Setiap produk melewati proses QA ketat dengan dokumentasi foto dan catatan kualitas terintegrasi AI.',
+    title: 'Listing & Pre-Order',
+    desc: 'Supplier membuat pre-order kebutuhan komoditas. Sistem AI mencocokkan dengan Poktan terdekat yang memiliki stok siap kirim.',
     icon: Search,
     color: 'bg-tani-blue',
   },
   {
     step: '03',
-    title: 'Matching & Negosiasi',
-    desc: 'Supplier menemukan produk berkualitas, negosiasi harga transparan langsung dengan Poktan.',
+    title: 'QA & Konfirmasi',
+    desc: 'Kualitas produk diverifikasi dengan dokumentasi lengkap. Kedua pihak menyepakati harga dan volume secara transparan.',
     icon: Handshake,
     color: 'bg-tani-amber',
   },
   {
     step: '04',
     title: 'Pengiriman & Pembayaran',
-    desc: 'Logistik terkelola dengan tracking real-time. Pembayaran aman via escrow ke rekening Taninesia.',
+    desc: 'Pengiriman dilacak real-time. Pembayaran diamankan via escrow — dana diteruskan ke Poktan setelah barang diterima.',
     icon: Truck,
     color: 'bg-tani-green-dark',
   },
@@ -289,7 +289,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-6 py-12 md:py-16">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
             {STATS.map((s, i) => (
-              <div key={s.label} className={`reveal reveal-d${i + 1} text-center md:text-left`}>
+              <div key={s.label} className={`reveal reveal-d${i + 1} text-center`}>
                 <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-white/10 text-white/80 mb-3">
                   <s.icon className="w-5 h-5" />
                 </div>
@@ -328,7 +328,7 @@ export default function LandingPage() {
                     <div className={`flex items-center justify-center w-11 h-11 rounded-xl ${s.color} text-white`}>
                       <s.icon className="w-5 h-5" />
                     </div>
-                    <span className="font-heading text-2xl font-bold text-foreground/10 group-hover:text-foreground/20 transition-colors">
+                    <span className="font-heading text-2xl font-bold text-tani-green/30 group-hover:text-tani-green/50 transition-colors">
                       {s.step}
                     </span>
                   </div>
