@@ -80,7 +80,7 @@ const STEPS = [
   {
     step: '04',
     title: 'Pengiriman & Pembayaran',
-    desc: 'Logistik terkelola dengan tracking real-time. Pembayaran aman via escrow ke rekening Poktan.',
+    desc: 'Logistik terkelola dengan tracking real-time. Pembayaran aman via escrow ke rekening Taninesia.',
     icon: Truck,
     color: 'bg-tani-green-dark',
   },

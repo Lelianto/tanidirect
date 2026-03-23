@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, ClipboardCheck, ShoppingCart, Truck,
   BarChart3, CreditCard, ShieldAlert, Building2, LogOut, Leaf,
   History, User, ChevronLeft, ChevronRight, Scale, BookOpen,
-  Rocket, FileCheck, ScrollText, Store,
+  Rocket, FileCheck, ScrollText, Store, Settings,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store'
@@ -33,6 +33,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   onboarding: Rocket,
   sop: ScrollText,
   katalog: Store,
+  settings: Settings,
 }
 
 interface NavItem {
@@ -78,6 +79,7 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: 'Sengketa', href: '/admin/dispute', icon: 'dispute' },
     { label: 'SOP Dispute', href: '/admin/sop-dispute', icon: 'sop_dispute' },
     { label: 'Onboarding', href: '/admin/onboarding', icon: 'onboarding' },
+    { label: 'Pengaturan', href: '/admin/settings', icon: 'settings' },
   ],
 }
 
