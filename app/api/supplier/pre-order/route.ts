@@ -31,6 +31,20 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServiceClient()
 
+    // Validasi komoditas harus ada di komoditas_config
+    const { data: configMatch } = await supabase
+      .from('komoditas_config')
+      .select('id')
+      .eq('nama', komoditas)
+      .maybeSingle()
+
+    if (!configMatch) {
+      return NextResponse.json(
+        { error: `Komoditas "${komoditas}" tidak terdaftar dalam konfigurasi platform` },
+        { status: 400 }
+      )
+    }
+
     // Verify supplier exists
     const { data: supplier, error: supplierError } = await supabase
       .from('supplier')
@@ -141,7 +155,7 @@ export async function GET(request: NextRequest) {
 
     const { data: preOrders, error } = await supabase
       .from('pre_order')
-      .select('*')
+      .select('id, komoditas, grade, volume_kg, harga_penawaran_per_kg, tanggal_dibutuhkan, wilayah_asal, wilayah_tujuan, status, deposit_dibayar, poktan_matched_id, created_at, updated_at')
       .eq('supplier_id', supplier_id)
       .order('created_at', { ascending: false })
 

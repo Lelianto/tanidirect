@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
-import { Leaf, Upload, Camera, X, CheckCircle2, Loader2 } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Leaf, Upload, Camera, X, CheckCircle2, Loader2, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/store'
@@ -14,18 +14,91 @@ interface DocUpload {
   preview: string
 }
 
+interface LayerDocConfig {
+  docType: string
+  label: string
+  description: string
+  capture?: 'environment' | 'user'
+  icon: 'upload' | 'camera' | 'file'
+}
+
+const LAYER_CONFIGS: Record<number, { title: string; subtitle: string; docs: LayerDocConfig[] }> = {
+  1: {
+    title: 'Verifikasi Identitas',
+    subtitle: 'Upload foto KTP dan selfie untuk verifikasi akun Anda',
+    docs: [
+      {
+        docType: 'ktp',
+        label: 'Foto KTP / e-KTP',
+        description: 'Pastikan foto jelas dan tidak terpotong',
+        capture: 'environment',
+        icon: 'upload',
+      },
+      {
+        docType: 'selfie',
+        label: 'Foto Selfie Memegang KTP',
+        description: 'Pegang KTP di samping wajah. Pastikan wajah dan tulisan KTP terlihat jelas.',
+        capture: 'user',
+        icon: 'camera',
+      },
+    ],
+  },
+  2: {
+    title: 'Verifikasi Dokumen Poktan',
+    subtitle: 'Upload Surat BPP dan foto buku rekening untuk aktivasi penuh akun',
+    docs: [
+      {
+        docType: 'surat_bpp',
+        label: 'Surat Rekomendasi BPP',
+        description: 'Surat rekomendasi dari Balai Penyuluhan Pertanian (BPP) setempat',
+        capture: 'environment',
+        icon: 'file',
+      },
+      {
+        docType: 'rekening',
+        label: 'Foto Buku Rekening / Halaman Depan',
+        description: 'Pastikan nama dan nomor rekening terlihat jelas',
+        capture: 'environment',
+        icon: 'upload',
+      },
+    ],
+  },
+}
+
+const ICON_MAP = {
+  upload: Upload,
+  camera: Camera,
+  file: FileText,
+}
+
 export default function KYCUploadPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const user = useAuthStore((s) => s.user)
-  const [ktp, setKtp] = useState<DocUpload>({ file: null, preview: '' })
-  const [selfie, setSelfie] = useState<DocUpload>({ file: null, preview: '' })
+  const role = useAuthStore((s) => s.role)
+
+  const layer = Number(searchParams.get('layer') || '1')
+  const config = LAYER_CONFIGS[layer] || LAYER_CONFIGS[1]
+
+  const dashboardPath = role === 'ketua_poktan' ? '/poktan/dashboard'
+    : role === 'supplier' ? '/supplier/dashboard'
+    : role === 'petani' ? '/petani/dashboard'
+    : '/login'
+
+  const kycPath = role === 'ketua_poktan' ? '/poktan/kyc'
+    : role === 'supplier' ? '/supplier/kyc'
+    : role === 'petani' ? '/petani/kyc'
+    : '/login'
+
+  const [docs, setDocs] = useState<Record<string, DocUpload>>(
+    () => Object.fromEntries(config.docs.map((d) => [d.docType, { file: null, preview: '' }]))
+  )
   const [uploading, setUploading] = useState(false)
-  const ktpInputRef = useRef<HTMLInputElement>(null)
-  const selfieInputRef = useRef<HTMLInputElement>(null)
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
   function handleFileSelect(
     e: React.ChangeEvent<HTMLInputElement>,
-    setter: (val: DocUpload) => void
+    docType: string
   ) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -36,28 +109,29 @@ export default function KYCUploadPage() {
     }
 
     const preview = URL.createObjectURL(file)
-    setter({ file, preview })
+    setDocs((prev) => ({ ...prev, [docType]: { file, preview } }))
   }
 
-  function removeFile(setter: (val: DocUpload) => void, currentPreview: string) {
-    if (currentPreview) URL.revokeObjectURL(currentPreview)
-    setter({ file: null, preview: '' })
+  function removeFile(docType: string) {
+    const current = docs[docType]
+    if (current?.preview) URL.revokeObjectURL(current.preview)
+    setDocs((prev) => ({ ...prev, [docType]: { file: null, preview: '' } }))
   }
 
   async function handleSubmit() {
-    if (!ktp.file || !selfie.file || !user) return
+    if (!user) return
+
+    const allFilled = config.docs.every((d) => docs[d.docType]?.file)
+    if (!allFilled) return
 
     setUploading(true)
     try {
-      // Upload both docs in parallel
-      const uploads = [
-        { file: ktp.file, docType: 'ktp' },
-        { file: selfie.file, docType: 'selfie' },
-      ].map(({ file, docType }) => {
+      const uploads = config.docs.map((d) => {
         const fd = new FormData()
         fd.append('user_id', user.id)
-        fd.append('doc_type', docType)
-        fd.append('file', file)
+        fd.append('doc_type', d.docType)
+        fd.append('layer', String(layer))
+        fd.append('file', docs[d.docType].file!)
         return fetch('/api/kyc/upload', { method: 'POST', body: fd })
       })
 
@@ -70,8 +144,17 @@ export default function KYCUploadPage() {
         }
       }
 
+      if (layer === 1 && user) {
+        useAuthStore.getState().setUser({ ...user, kyc_status: 'docs_submitted' })
+      }
+
       toast.success('Dokumen berhasil diupload!')
-      router.push('/register/menunggu-review')
+
+      if (layer === 1) {
+        router.push('/register/menunggu-review')
+      } else {
+        router.push(kycPath)
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan saat upload')
     } finally {
@@ -79,7 +162,7 @@ export default function KYCUploadPage() {
     }
   }
 
-  const canSubmit = !!ktp.file && !!selfie.file && !uploading
+  const canSubmit = config.docs.every((d) => docs[d.docType]?.file) && !uploading
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gradient-to-b from-tani-green/5 to-background p-4">
@@ -90,116 +173,74 @@ export default function KYCUploadPage() {
             <Leaf className="h-7 w-7" />
           </div>
           <h1 className="text-xl font-bold font-[family-name:var(--font-heading)] text-tani-green">
-            Verifikasi Identitas
+            {config.title}
           </h1>
+          {layer > 1 && (
+            <p className="text-xs font-medium text-tani-green/70">Layer {layer}</p>
+          )}
           <p className="text-sm text-muted-foreground">
-            Upload foto KTP dan selfie untuk verifikasi akun Anda
+            {config.subtitle}
           </p>
         </div>
 
-        {/* Upload KTP */}
-        <Card className="shadow-sm">
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-semibold">Foto KTP / e-KTP</h3>
-                <p className="text-xs text-muted-foreground">
-                  Pastikan foto jelas dan tidak terpotong
-                </p>
-              </div>
-              {ktp.file && <CheckCircle2 className="h-5 w-5 text-green-600" />}
-            </div>
+        {/* Document Upload Cards */}
+        {config.docs.map((docConfig) => {
+          const doc = docs[docConfig.docType]
+          const IconComponent = ICON_MAP[docConfig.icon]
 
-            {ktp.preview ? (
-              <div className="relative">
-                <Image
-                  src={ktp.preview}
-                  alt="KTP Preview"
-                  width={400}
-                  height={250}
-                  className="w-full h-48 object-cover rounded-lg border"
+          return (
+            <Card key={docConfig.docType} className="shadow-sm">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold">{docConfig.label}</h3>
+                    <p className="text-xs text-muted-foreground">
+                      {docConfig.description}
+                    </p>
+                  </div>
+                  {doc?.file && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                </div>
+
+                {doc?.preview ? (
+                  <div className="relative">
+                    <Image
+                      src={doc.preview}
+                      alt={`${docConfig.label} Preview`}
+                      width={400}
+                      height={250}
+                      className="w-full h-48 object-cover rounded-lg border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeFile(docConfig.docType)}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => inputRefs.current[docConfig.docType]?.click()}
+                    className="w-full h-40 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center gap-2 hover:border-tani-green hover:bg-tani-green/5 transition-colors"
+                  >
+                    <IconComponent className="h-8 w-8 text-gray-400" />
+                    <span className="text-sm text-gray-500">Tap untuk upload {docConfig.label.toLowerCase()}</span>
+                    <span className="text-xs text-gray-400">JPG, PNG — Maks 5MB</span>
+                  </button>
+                )}
+                <input
+                  ref={(el) => { inputRefs.current[docConfig.docType] = el }}
+                  type="file"
+                  accept="image/*"
+                  capture={docConfig.capture}
+                  className="hidden"
+                  onChange={(e) => handleFileSelect(e, docConfig.docType)}
                 />
-                <button
-                  type="button"
-                  onClick={() => removeFile(setKtp, ktp.preview)}
-                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => ktpInputRef.current?.click()}
-                className="w-full h-40 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center gap-2 hover:border-tani-green hover:bg-tani-green/5 transition-colors"
-              >
-                <Upload className="h-8 w-8 text-gray-400" />
-                <span className="text-sm text-gray-500">Tap untuk upload foto KTP</span>
-                <span className="text-xs text-gray-400">JPG, PNG — Maks 5MB</span>
-              </button>
-            )}
-            <input
-              ref={ktpInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => handleFileSelect(e, setKtp)}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Upload Selfie */}
-        <Card className="shadow-sm">
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-semibold">Foto Selfie Memegang KTP</h3>
-                <p className="text-xs text-muted-foreground">
-                  Pegang KTP di samping wajah. Pastikan wajah dan tulisan KTP terlihat jelas.
-                </p>
-              </div>
-              {selfie.file && <CheckCircle2 className="h-5 w-5 text-green-600" />}
-            </div>
-
-            {selfie.preview ? (
-              <div className="relative">
-                <Image
-                  src={selfie.preview}
-                  alt="Selfie Preview"
-                  width={400}
-                  height={250}
-                  className="w-full h-48 object-cover rounded-lg border"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeFile(setSelfie, selfie.preview)}
-                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => selfieInputRef.current?.click()}
-                className="w-full h-40 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center gap-2 hover:border-tani-green hover:bg-tani-green/5 transition-colors"
-              >
-                <Camera className="h-8 w-8 text-gray-400" />
-                <span className="text-sm text-gray-500">Tap untuk foto selfie + KTP</span>
-                <span className="text-xs text-gray-400">JPG, PNG — Maks 5MB</span>
-              </button>
-            )}
-            <input
-              ref={selfieInputRef}
-              type="file"
-              accept="image/*"
-              capture="user"
-              className="hidden"
-              onChange={(e) => handleFileSelect(e, setSelfie)}
-            />
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          )
+        })}
 
         {/* Submit */}
         <Button
@@ -223,6 +264,14 @@ export default function KYCUploadPage() {
         <p className="text-xs text-center text-muted-foreground">
           Dokumen Anda akan direview oleh tim taninesia dalam maksimum 3 hari kerja.
         </p>
+
+        <Button
+          variant="ghost"
+          className="w-full text-muted-foreground"
+          onClick={() => router.push(layer === 1 ? dashboardPath : kycPath)}
+        >
+          {layer === 1 ? 'Lewati, masuk ke Dashboard' : 'Kembali ke Status KYC'}
+        </Button>
       </div>
     </div>
   )

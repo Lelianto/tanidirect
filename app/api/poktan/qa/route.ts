@@ -186,7 +186,7 @@ export async function GET(request: NextRequest) {
 
     const { data: inspections, error: qaError } = await supabase
       .from('qa_inspeksi')
-      .select('*, transaksi(*)')
+      .select('id, transaksi_id, komoditas, volume_inspeksi_kg, grade_hasil, skor_kualitas, status, catatan_inspektor, foto_urls, fee_qa, fee_dibayar, supplier_review_status, supplier_review_catatan, created_at, transaksi(id, komoditas, grade, volume_estimasi_kg, status)')
       .eq('poktan_id', poktan_id)
       .order('created_at', { ascending: false })
 
@@ -201,7 +201,7 @@ export async function GET(request: NextRequest) {
     // Also get transactions that need QA
     const { data: transactions, error: txError } = await supabase
       .from('transaksi')
-      .select('*')
+      .select('id, komoditas, grade, volume_estimasi_kg, harga_per_kg, status, tanggal_panen_estimasi, created_at')
       .eq('poktan_id', poktan_id)
       .in('status', ['dikonfirmasi', 'dalam_pengiriman', 'tiba_di_gudang'])
       .order('created_at', { ascending: false })

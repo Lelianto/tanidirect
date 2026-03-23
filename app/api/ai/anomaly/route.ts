@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     // Fetch poktan profile
     const { data: poktan, error: poktanError } = await supabase
       .from('poktan')
-      .select('*')
+      .select('id, nama_poktan, skor_qa, skor_ketepatan, total_transaksi, is_qa_certified')
       .eq('id', poktanId)
       .single()
 
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     // Fetch 20 latest transactions
     const { data: transaksi } = await supabase
       .from('transaksi')
-      .select('*')
+      .select('id, komoditas, volume_estimasi_kg, volume_aktual_kg, harga_per_kg, status')
       .eq('poktan_id', poktanId)
       .order('created_at', { ascending: false })
       .limit(20)
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     // Fetch 20 latest QA inspections
     const { data: qaInspeksi } = await supabase
       .from('qa_inspeksi')
-      .select('*')
+      .select('id, grade_hasil, skor_kualitas, status, supplier_review_status')
       .eq('poktan_id', poktanId)
       .order('created_at', { ascending: false })
       .limit(20)

@@ -27,6 +27,7 @@ export default function AdminDashboard() {
   })
   const [anomaliOpen, setAnomaliOpen] = useState<any[]>([])
   const [kreditPending, setKreditPending] = useState<any[]>([])
+  const [transaksiList, setTransaksiList] = useState<any[]>([])
   const [aiInsight, setAiInsight] = useState<DashboardInsightResponse | null>(null)
   const [aiInsightLoading, setAiInsightLoading] = useState(false)
 
@@ -38,19 +39,43 @@ export default function AdminDashboard() {
           setStats(data.stats)
           setAnomaliOpen(data.recent_anomali || [])
           setKreditPending(data.recent_kredit || [])
+          setTransaksiList(data.transaksi || [])
         }
       })
       .catch(() => {})
   }, [])
 
+  // Chart data: aggregate transaksi selesai per bulan (6 bulan terakhir)
   const chartData = useMemo(() => {
-    const months = ['Okt', 'Nov', 'Des', 'Jan', 'Feb', 'Mar']
+    const now = new Date()
+    const months: { key: string; label: string }[] = []
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      months.push({
+        key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+        label: d.toLocaleString('id-ID', { month: 'short' }),
+      })
+    }
+
+    const grouped: Record<string, { volume: number; pendapatan: number }> = {}
+    for (const m of months) grouped[m.key] = { volume: 0, pendapatan: 0 }
+
+    const selesai = transaksiList.filter((t: any) => t.status === 'selesai')
+    for (const t of selesai) {
+      const date = new Date(t.created_at)
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      if (grouped[key]) {
+        grouped[key].volume += Number(t.total_nilai || 0) / (Number(t.harga_per_kg) || 1) // approx kg
+        grouped[key].pendapatan += Number(t.total_nilai || 0)
+      }
+    }
+
     return months.map((m) => ({
-      bulan: m,
-      volume: Math.round(5000 + Math.random() * 15000),
-      pendapatan: Math.round(500000 + Math.random() * 3000000),
+      bulan: m.label,
+      volume: Math.round(grouped[m.key].volume),
+      pendapatan: Math.round(grouped[m.key].pendapatan),
     }))
-  }, [])
+  }, [transaksiList])
 
   return (
     <>

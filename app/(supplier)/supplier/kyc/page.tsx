@@ -1,19 +1,22 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { TrustScoreBadge } from '@/components/shared/TrustScoreBadge'
 import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store'
 import { formatTanggal } from '@/lib/utils/date'
 // DIDIT_DISABLED: akan diaktifkan kembali setelah bug selesai
 // import { DiditVerification } from '@/components/shared/DiditVerification'
-import { FileCheck, FileText, Shield } from 'lucide-react'
+import { FileCheck, FileText, Shield, Upload } from 'lucide-react'
 
 const LAYERS = [1, 2, 3] as const
 
 export default function SupplierKYCPage() {
+  const router = useRouter()
   const user = useAuthStore((s) => s.user)
   const [kycData, setKycData] = useState<any[]>([])
 
@@ -70,6 +73,29 @@ export default function SupplierKYCPage() {
 
         {/* DIDIT_DISABLED: akan diaktifkan kembali setelah bug selesai */}
         {/* <DiditVerification /> */}
+
+        {/* Upload CTA - show when KYC not fully verified */}
+        {user?.kyc_status !== 'fully_verified' && (
+          <Card className="shadow-sm border-amber-200 bg-amber-50/50">
+            <CardContent className="p-4 space-y-3">
+              <p className="text-sm font-semibold text-amber-800">
+                {mySubmissions.length === 0
+                  ? 'Anda belum mengupload dokumen verifikasi.'
+                  : 'Dokumen Anda sedang dalam proses review.'}
+              </p>
+              <p className="text-xs text-amber-700">
+                Upload foto KTP dan selfie untuk memulai proses verifikasi identitas.
+              </p>
+              <Button
+                className="w-full bg-tani-green hover:bg-tani-green/90"
+                onClick={() => router.push('/register/kyc')}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                {mySubmissions.length === 0 ? 'Upload Dokumen KYC' : 'Upload Ulang Dokumen'}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Layer Cards */}
         {LAYERS.map((layer) => {

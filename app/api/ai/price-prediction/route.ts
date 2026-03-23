@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     // Check cached prediction
     const { data: cached } = await supabase
       .from('prediksi_harga')
-      .select('*')
+      .select('id, komoditas, wilayah, tren, estimasi_2_minggu, estimasi_4_minggu, faktor_penentu, catatan_penting, valid_hingga, created_at')
       .eq('komoditas', komoditas)
       .eq('wilayah', wilayah)
       .gte('valid_hingga', new Date().toISOString().split('T')[0])
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     const { data: historis } = await supabase
       .from('harga_historis')
-      .select('*')
+      .select('id, komoditas, wilayah, harga_per_kg, volume_total_kg, minggu')
       .eq('komoditas', komoditas)
       .eq('wilayah', wilayah)
       .gte('minggu', twelveWeeksAgo.toISOString().split('T')[0])

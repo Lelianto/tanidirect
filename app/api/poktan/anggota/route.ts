@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     if (petaniIds.length > 0) {
       const { data } = await supabase
         .from('kontribusi_petani')
-        .select('*')
+        .select('id, transaksi_id, petani_id, volume_kg, harga_diterima, status_bayar')
         .in('petani_id', petaniIds)
       kontribusi = data || []
     }

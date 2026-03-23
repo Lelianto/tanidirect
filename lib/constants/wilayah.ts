@@ -40,3 +40,65 @@ export const PROVINSI = [
 ] as const
 
 export type Provinsi = (typeof PROVINSI)[number]
+
+export const PROVINSI_PULAU: Record<string, string> = {
+  // Sumatera
+  'Aceh': 'Sumatera',
+  'Sumatera Utara': 'Sumatera',
+  'Sumatera Barat': 'Sumatera',
+  'Riau': 'Sumatera',
+  'Kepulauan Riau': 'Sumatera',
+  'Jambi': 'Sumatera',
+  'Sumatera Selatan': 'Sumatera',
+  'Bengkulu': 'Sumatera',
+  'Lampung': 'Sumatera',
+  'Kepulauan Bangka Belitung': 'Sumatera',
+
+  // Jawa
+  'DKI Jakarta': 'Jawa',
+  'Jawa Barat': 'Jawa',
+  'Banten': 'Jawa',
+  'Jawa Tengah': 'Jawa',
+  'DI Yogyakarta': 'Jawa',
+  'Jawa Timur': 'Jawa',
+
+  // Kalimantan
+  'Kalimantan Barat': 'Kalimantan',
+  'Kalimantan Tengah': 'Kalimantan',
+  'Kalimantan Selatan': 'Kalimantan',
+  'Kalimantan Timur': 'Kalimantan',
+  'Kalimantan Utara': 'Kalimantan',
+
+  // Sulawesi
+  'Sulawesi Utara': 'Sulawesi',
+  'Gorontalo': 'Sulawesi',
+  'Sulawesi Tengah': 'Sulawesi',
+  'Sulawesi Barat': 'Sulawesi',
+  'Sulawesi Selatan': 'Sulawesi',
+  'Sulawesi Tenggara': 'Sulawesi',
+
+  // Bali & Nusa Tenggara
+  'Bali': 'Bali-Nusa Tenggara',
+  'Nusa Tenggara Barat': 'Bali-Nusa Tenggara',
+  'Nusa Tenggara Timur': 'Bali-Nusa Tenggara',
+
+  // Maluku
+  'Maluku': 'Maluku',
+  'Maluku Utara': 'Maluku',
+
+  // Papua
+  'Papua': 'Papua',
+  'Papua Barat': 'Papua',
+  'Papua Tengah': 'Papua',
+  'Papua Pegunungan': 'Papua',
+  'Papua Selatan': 'Papua',
+  'Papua Barat Daya': 'Papua',
+}
+
+export function getPulau(provinsi: string): string {
+  return PROVINSI_PULAU[provinsi] || 'Lainnya'
+}
+
+export function isSamaPulau(prov1: string, prov2: string): boolean {
+  return getPulau(prov1) === getPulau(prov2)
+}

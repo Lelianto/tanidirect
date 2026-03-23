@@ -26,29 +26,29 @@ interface NavItem {
   label: string
   href: string
   icon: string
+  requiresKYC?: boolean
 }
 
 const BOTTOM_NAV: Record<UserRole, NavItem[]> = {
   ketua_poktan: [
     { label: 'Dashboard', href: '/poktan/dashboard', icon: 'dashboard' },
-    { label: 'QA', href: '/poktan/qa', icon: 'qa' },
-    { label: 'Permintaan', href: '/poktan/pre-order', icon: 'preorder' },
+    { label: 'QA', href: '/poktan/qa', icon: 'qa', requiresKYC: true },
+    { label: 'Permintaan', href: '/poktan/pre-order', icon: 'preorder', requiresKYC: true },
+    { label: 'KYC', href: '/poktan/kyc', icon: 'kyc' },
     { label: 'SOP', href: '/poktan/sop', icon: 'sop' },
-    { label: 'Profil', href: '/poktan/profil', icon: 'profil' },
   ],
   supplier: [
     { label: 'Dashboard', href: '/supplier/dashboard', icon: 'dashboard' },
-    { label: 'Pre-Order', href: '/supplier/pre-order', icon: 'preorder' },
-    { label: 'QA', href: '/supplier/qa', icon: 'qa' },
+    { label: 'Pre-Order', href: '/supplier/pre-order', icon: 'preorder', requiresKYC: true },
+    { label: 'QA', href: '/supplier/qa', icon: 'qa', requiresKYC: true },
+    { label: 'KYC', href: '/supplier/kyc', icon: 'kyc' },
     { label: 'SOP', href: '/supplier/sop', icon: 'sop' },
-    { label: 'Profil', href: '/supplier/profil', icon: 'profil' },
   ],
   petani: [
     { label: 'Dashboard', href: '/petani/dashboard', icon: 'dashboard' },
-    { label: 'Riwayat', href: '/petani/riwayat', icon: 'riwayat' },
+    { label: 'Riwayat', href: '/petani/riwayat', icon: 'riwayat', requiresKYC: true },
     { label: 'KYC', href: '/petani/kyc', icon: 'kyc' },
     { label: 'SOP', href: '/petani/sop', icon: 'sop' },
-    { label: 'Profil', href: '/petani/profil', icon: 'profil' },
   ],
   admin: [
     { label: 'Dashboard', href: '/admin/dashboard', icon: 'dashboard' },
@@ -59,10 +59,15 @@ const BOTTOM_NAV: Record<UserRole, NavItem[]> = {
 
 export function BottomNav() {
   const pathname = usePathname()
-  const role = useAuthStore((s) => s.role)
+  const { role, user } = useAuthStore()
 
   if (!role) return null
-  const items = BOTTOM_NAV[role] || []
+
+  const isKYCVerified = user?.kyc_status === 'fully_verified'
+  const items = (BOTTOM_NAV[role] || []).filter((item) => {
+    if (item.requiresKYC && !isKYCVerified) return false
+    return true
+  })
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-border lg:hidden">

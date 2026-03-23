@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
     // 5. Fetch the created user profile
     const { data: profile } = await supabase
       .from('users')
-      .select('*')
+      .select('id, role, nama_lengkap, no_hp, no_ktp, foto_url, provinsi, kabupaten, kecamatan, alamat, is_verified, is_active, kyc_status, created_at')
       .eq('id', userId)
       .single()
 

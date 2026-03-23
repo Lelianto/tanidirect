@@ -195,7 +195,7 @@ export default function PetaniRiwayatPage() {
                         <StatusBadge status={tx?.grade || 'B'} />
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Volume: {formatKg(k.volume_kg)}
+                        Volume kontribusi: {formatKg(k.volume_kg)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {tx?.created_at ? formatTanggalSingkat(tx.created_at) : '-'}
@@ -208,6 +208,22 @@ export default function PetaniRiwayatPage() {
                       <StatusBadge status={k.status_bayar} />
                     </div>
                   </div>
+                  {tx?.total_nilai && k.harga_diterima && (
+                    <div className="mt-2 pt-2 border-t border-border/50 grid grid-cols-3 gap-2 text-[11px] text-muted-foreground">
+                      <div>
+                        <span>Nilai transaksi</span>
+                        <p className="font-medium text-foreground">{formatRupiah(tx.total_nilai)}</p>
+                      </div>
+                      <div>
+                        <span>Harga/kg</span>
+                        <p className="font-medium text-foreground">{formatRupiah(tx.harga_per_kg)}</p>
+                      </div>
+                      <div>
+                        <span>Bagian Anda</span>
+                        <p className="font-medium text-tani-green">{formatRupiah(k.harga_diterima)}</p>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )

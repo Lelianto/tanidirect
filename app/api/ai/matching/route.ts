@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     // Fetch pre-order
     const { data: preOrder, error: poError } = await supabase
       .from('pre_order')
-      .select('*')
+      .select('id, komoditas, grade, volume_kg, wilayah_tujuan, wilayah_asal, tanggal_dibutuhkan')
       .eq('id', preOrderId)
       .single()
 

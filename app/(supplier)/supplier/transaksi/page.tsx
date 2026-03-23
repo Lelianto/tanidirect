@@ -26,7 +26,8 @@ import {
 import { useAuthStore } from '@/store'
 import { formatRupiah, formatKg, formatNumber } from '@/lib/utils/currency'
 import { formatTanggalSingkat } from '@/lib/utils/date'
-import { KOMODITAS, GRADE_COLORS } from '@/lib/constants/komoditas'
+import { GRADE_COLORS } from '@/lib/constants/komoditas'
+import { useKomoditasConfig } from '@/hooks/useKomoditasConfig'
 import {
   FileText, TrendingUp, Package, Filter,
 } from 'lucide-react'
@@ -44,6 +45,7 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
 
 export default function SupplierTransaksiPage() {
   const user = useAuthStore((s) => s.user)
+  const { namaList: KOMODITAS } = useKomoditasConfig()
   const [allTransaksi, setAllTransaksi] = useState<any[]>([])
 
   useEffect(() => {

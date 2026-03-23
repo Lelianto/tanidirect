@@ -15,7 +15,7 @@ export async function GET() {
       // Fallback: try without foreign key hints
       const { data: logsSimple, error: simpleError } = await supabase
         .from('kyc_audit_log')
-        .select('*')
+        .select('id, user_id, admin_id, action, notes, created_at')
         .order('created_at', { ascending: false })
         .limit(100)
 

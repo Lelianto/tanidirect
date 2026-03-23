@@ -1,19 +1,22 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { TrustScoreBadge } from '@/components/shared/TrustScoreBadge'
 import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store'
 import { formatTanggal } from '@/lib/utils/date'
 // DIDIT_DISABLED: akan diaktifkan kembali setelah bug selesai
 // import { DiditVerification } from '@/components/shared/DiditVerification'
-import { FileCheck, FileText, Shield } from 'lucide-react'
+import { FileCheck, FileText, Shield, Upload } from 'lucide-react'
 
-const LAYERS = [1, 2, 3] as const
+const LAYERS = [1, 2] as const
 
 export default function PoktanKYCPage() {
+  const router = useRouter()
   const user = useAuthStore((s) => s.user)
 
   const [mySubmissions, setMySubmissions] = useState<any[]>([])
@@ -41,7 +44,7 @@ export default function PoktanKYCPage() {
     return highest.trust_level
   }, [mySubmissions])
 
-  const getSubmissionForLayer = (layer: 1 | 2 | 3) =>
+  const getSubmissionForLayer = (layer: 1 | 2) =>
     mySubmissions.find((s) => s.layer === layer)
 
   return (
@@ -65,6 +68,48 @@ export default function PoktanKYCPage() {
 
         {/* DIDIT_DISABLED: akan diaktifkan kembali setelah bug selesai */}
         {/* <DiditVerification /> */}
+
+        {/* Upload CTA - show when KYC not fully verified */}
+        {user?.kyc_status !== 'fully_verified' && (() => {
+          const layer1 = getSubmissionForLayer(1)
+          const layer1NeedUpload = !layer1 || layer1.status === 'rejected'
+
+          return (
+            <Card className="shadow-sm border-amber-200 bg-amber-50/50">
+              <CardContent className="p-4 space-y-3">
+                {layer1NeedUpload ? (
+                  <>
+                    <p className="text-sm font-semibold text-amber-800">
+                      {!layer1
+                        ? 'Anda belum mengupload dokumen verifikasi.'
+                        : 'Dokumen Layer 1 Anda ditolak. Silakan upload ulang.'}
+                    </p>
+                    <p className="text-xs text-amber-700">
+                      Upload foto KTP dan selfie untuk memulai proses verifikasi identitas.
+                    </p>
+                    <Button
+                      className="w-full bg-tani-green hover:bg-tani-green/90"
+                      onClick={() => router.push('/register/kyc')}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      {!layer1 ? 'Upload Dokumen KYC' : 'Upload Ulang Dokumen'}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-semibold text-amber-800">
+                      Dokumen Anda sedang dalam proses review.
+                    </p>
+                    <p className="text-xs text-amber-700">
+                      Verifikasi Layer 1 {layer1.status === 'approved' ? 'telah disetujui' : 'sedang ditinjau'}.
+                      {layer1.status === 'approved' && ' Lanjutkan verifikasi layer berikutnya untuk meningkatkan trust level.'}
+                    </p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )
+        })()}
 
         {/* Layer Cards */}
         {LAYERS.map((layer) => {
@@ -117,11 +162,32 @@ export default function PoktanKYCPage() {
                         {submission.reviewer_catatan}
                       </div>
                     )}
+
+                    {submission.status === 'rejected' && (
+                      <Button
+                        size="sm"
+                        className="w-full bg-tani-green hover:bg-tani-green/90"
+                        onClick={() => router.push(`/register/kyc?layer=${layer}`)}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Ulang Dokumen
+                      </Button>
+                    )}
                   </>
                 ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Belum ada dokumen yang diajukan untuk layer ini.
-                  </p>
+                  <>
+                    <p className="text-xs text-muted-foreground">
+                      Belum ada dokumen yang diajukan untuk layer ini.
+                    </p>
+                    <Button
+                      size="sm"
+                      className="w-full bg-tani-green hover:bg-tani-green/90"
+                      onClick={() => router.push(`/register/kyc?layer=${layer}`)}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Ajukan Verifikasi Layer {layer}
+                    </Button>
+                  </>
                 )}
               </CardContent>
             </Card>

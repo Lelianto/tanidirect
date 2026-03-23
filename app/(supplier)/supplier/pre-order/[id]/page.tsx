@@ -23,9 +23,10 @@ import {
   ArrowLeft, MapPin, Calendar, Truck, ClipboardCheck,
   CheckCircle, XCircle, Clock, Package, Star, AlertCircle,
   ShieldCheck, Sparkles, Loader2, FileText,
-  ChevronDown, ChevronRight, Eye,
+  ChevronDown, ChevronRight, Eye, Wallet, ArrowRight,
 } from 'lucide-react'
 import Link from 'next/link'
+import type { PembayaranEscrow } from '@/types'
 
 const TIMELINE_STEPS: { status: string; label: string; icon: React.ReactNode }[] = [
   { status: 'open', label: 'Pre-Order Dibuat', icon: <Package className="h-4 w-4" /> },
@@ -52,6 +53,7 @@ export default function PreOrderDetailPage() {
   const [transaksi, setTransaksi] = useState<any>(null)
   const [qaInspeksi, setQaInspeksi] = useState<any[]>([])
   const [logistik, setLogistik] = useState<any[]>([])
+  const [pembayaran, setPembayaran] = useState<PembayaranEscrow | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -68,6 +70,21 @@ export default function PreOrderDetailPage() {
             setTransaksi(po?.transaksi || null)
             setQaInspeksi(po?.qa_inspeksi || [])
             setLogistik(po?.logistik || [])
+
+            // Fetch pembayaran for this pre-order
+            if (po?.supplier_id) {
+              try {
+                const payRes = await fetch(`/api/supplier/pembayaran?supplier_id=${po.supplier_id}&pre_order_id=${id}`)
+                if (payRes.ok) {
+                  const payData = await payRes.json()
+                  if (payData.pembayaran && payData.pembayaran.length > 0) {
+                    setPembayaran(payData.pembayaran[0])
+                  }
+                }
+              } catch {
+                // non-fatal
+              }
+            }
           }
         }
       } catch {
@@ -279,6 +296,13 @@ export default function PreOrderDetailPage() {
                 <p className="text-xs text-muted-foreground">Deposit</p>
                 <p className="font-medium">{formatRupiah(preOrder.deposit_dibayar)}</p>
               </div>
+              <div>
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  Fee QA (est.)
+                  <span className="text-[9px] bg-blue-100 text-blue-700 px-1 rounded-full">platform</span>
+                </p>
+                <p className="font-medium text-muted-foreground">{formatRupiah(preOrder.volume_kg * 50)}</p>
+              </div>
             </div>
             <Separator />
             <div className="flex items-center gap-2 text-sm">
@@ -299,6 +323,72 @@ export default function PreOrderDetailPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Status Pembayaran */}
+        {pembayaran && (
+          <Card className={`shadow-sm ${
+            pembayaran.status === 'terverifikasi' ? 'border-green-200 bg-green-50/50' :
+            pembayaran.status === 'ditolak' ? 'border-red-200 bg-red-50/50' :
+            pembayaran.status === 'menunggu_verifikasi' ? 'border-blue-200 bg-blue-50/50' :
+            'border-amber-200 bg-amber-50/50'
+          }`}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Wallet className="h-4 w-4" />
+                Status Pembayaran
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    {pembayaran.jenis_pembayaran === 'deposit' ? 'Deposit 10%' : 'Bayar Full'}
+                  </p>
+                  <p className="font-bold text-lg">{formatRupiah(pembayaran.jumlah)}</p>
+                </div>
+                <Badge className={`text-[10px] px-2 py-0.5 ${
+                  pembayaran.status === 'terverifikasi' ? 'bg-green-100 text-green-800' :
+                  pembayaran.status === 'ditolak' ? 'bg-red-100 text-red-800' :
+                  pembayaran.status === 'menunggu_verifikasi' ? 'bg-blue-100 text-blue-800' :
+                  'bg-amber-100 text-amber-800'
+                }`}>
+                  {pembayaran.status === 'terverifikasi' ? 'Terverifikasi' :
+                   pembayaran.status === 'ditolak' ? 'Ditolak' :
+                   pembayaran.status === 'menunggu_verifikasi' ? 'Menunggu Verifikasi' :
+                   'Belum Dibayar'}
+                </Badge>
+              </div>
+
+              {pembayaran.status === 'ditolak' && pembayaran.admin_catatan && (
+                <div className="bg-red-100 rounded-lg p-3">
+                  <p className="text-xs font-medium text-red-800">Alasan: {pembayaran.admin_catatan}</p>
+                </div>
+              )}
+
+              {['menunggu_pembayaran', 'ditolak'].includes(pembayaran.status) && (
+                <Link href={`/supplier/pembayaran/${pembayaran.id}`}>
+                  <Button className="w-full bg-tani-green hover:bg-tani-green/90 text-white gap-2">
+                    <Wallet className="h-4 w-4" />
+                    {pembayaran.status === 'ditolak' ? 'Upload Ulang Bukti' : 'Bayar Sekarang'}
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {!pembayaran && preOrder && !loading && (
+          <Card className="shadow-sm border-amber-200 bg-amber-50/50">
+            <CardContent className="p-4 flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-amber-800">Belum ada data pembayaran</p>
+                <p className="text-xs text-amber-700">Pembayaran escrow belum dibuat untuk pre-order ini.</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Catatan Kualitas Supplier */}
         <Card className="shadow-sm border-tani-green/20">

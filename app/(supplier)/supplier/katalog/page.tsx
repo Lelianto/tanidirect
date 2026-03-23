@@ -9,8 +9,12 @@ import { formatRupiah, formatKg } from '@/lib/utils/currency'
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
 } from 'recharts'
+import Image from 'next/image'
 import { Store, Filter, TrendingUp } from 'lucide-react'
+import { useAuthStore } from '@/store'
 import type { KatalogKomoditas } from '@/types'
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 
 function KomoditasKatalogCard({ item }: { item: KatalogKomoditas }) {
   const radarData = [
@@ -26,8 +30,27 @@ function KomoditasKatalogCard({ item }: { item: KatalogKomoditas }) {
     ? 'bg-amber-100 text-amber-800'
     : 'bg-red-100 text-red-800'
 
+  const fotoUrls = item.catatan_panen?.foto_urls || (item.foto_url ? [item.foto_url] : [])
+
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-sm overflow-hidden">
+      {/* Photo gallery */}
+      {fotoUrls.length > 0 && (
+        <div className="flex gap-0.5 h-36 bg-muted">
+          {fotoUrls.map((url, i) => (
+            <div key={i} className={`relative ${fotoUrls.length === 1 ? 'w-full' : fotoUrls.length === 2 ? 'w-1/2' : 'w-1/3'}`}>
+              <Image
+                src={`${SUPABASE_URL}/storage/v1/object/public/platform-assets/${url}`}
+                alt={`${item.nama} foto ${i + 1}`}
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
       <CardContent className="p-4 space-y-3">
         <div className="flex items-start justify-between">
           <div>
@@ -40,7 +63,7 @@ function KomoditasKatalogCard({ item }: { item: KatalogKomoditas }) {
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {item.poktan_nama} &middot; {item.wilayah}
+              {item.poktan?.nama_poktan || item.poktan_nama} &middot; {item.wilayah}
             </p>
           </div>
           <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
@@ -64,6 +87,13 @@ function KomoditasKatalogCard({ item }: { item: KatalogKomoditas }) {
           <p className="text-sm font-medium">{item.jadwal_panen}</p>
         </div>
 
+        {item.catatan_panen?.catatan && (
+          <div>
+            <p className="text-xs text-muted-foreground">Catatan poktan</p>
+            <p className="text-sm text-muted-foreground">{item.catatan_panen.catatan}</p>
+          </div>
+        )}
+
         <ResponsiveContainer width="100%" height={150}>
           <RadarChart data={radarData}>
             <PolarGrid />
@@ -82,6 +112,7 @@ function KomoditasKatalogCard({ item }: { item: KatalogKomoditas }) {
 }
 
 export default function SupplierKatalogPage() {
+  const user = useAuthStore((s) => s.user)
   const [katalogData, setKatalogData] = useState<import('@/types').KatalogKomoditas[]>([])
   const [komoditas, setKomoditas] = useState('Semua')
   const [wilayah, setWilayah] = useState('Semua')
@@ -91,7 +122,11 @@ export default function SupplierKatalogPage() {
   useEffect(() => {
     async function fetchKatalog() {
       try {
-        const res = await fetch('/api/supplier/katalog')
+        const params = new URLSearchParams()
+        if (user?.provinsi) {
+          params.set('supplier_provinsi', user.provinsi)
+        }
+        const res = await fetch(`/api/supplier/katalog?${params.toString()}`)
         if (res.ok) {
           const data = await res.json()
           if (data.success) {
@@ -103,7 +138,7 @@ export default function SupplierKatalogPage() {
       }
     }
     fetchKatalog()
-  }, [])
+  }, [user])
 
   const uniqueKomoditas = useMemo(
     () => [...new Set(katalogData.map((k) => k.nama))],
@@ -126,7 +161,7 @@ export default function SupplierKatalogPage() {
       }
       return true
     })
-  }, [komoditas, wilayah, volumeMin, jadwal])
+  }, [katalogData, komoditas, wilayah, volumeMin, jadwal])
 
   return (
     <>

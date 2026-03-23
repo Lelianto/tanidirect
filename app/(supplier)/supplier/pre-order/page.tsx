@@ -30,11 +30,11 @@ import {
 import { useAuthStore } from '@/store'
 import { toast } from 'sonner'
 import { formatRupiah, formatKg } from '@/lib/utils/currency'
-import { KOMODITAS } from '@/lib/constants/komoditas'
+import { useKomoditasConfig } from '@/hooks/useKomoditasConfig'
 import { PROVINSI } from '@/lib/constants/wilayah'
-import { Plus, Package, Loader2 } from 'lucide-react'
+import { Plus, Package, Loader2, Wallet } from 'lucide-react'
 import Link from 'next/link'
-import type { StatusPreOrder } from '@/types'
+import type { StatusPreOrder, JenisPembayaran } from '@/types'
 
 const TAB_MAP: { value: string; label: string; statuses: StatusPreOrder[] }[] = [
   { value: 'mencari', label: 'Mencari Poktan', statuses: ['open'] },
@@ -46,6 +46,7 @@ const TAB_MAP: { value: string; label: string; statuses: StatusPreOrder[] }[] = 
 
 export default function SupplierPreOrderPage() {
   const user = useAuthStore((s) => s.user)
+  const { namaList: KOMODITAS } = useKomoditasConfig()
   const [supplier, setSupplier] = useState<any>(null)
 
   useEffect(() => {
@@ -85,6 +86,7 @@ export default function SupplierPreOrderPage() {
     fetchPreOrders()
   }, [fetchPreOrders])
   const [showPreview, setShowPreview] = useState(false)
+  const [jenisPembayaran, setJenisPembayaran] = useState<JenisPembayaran>('deposit')
   const [form, setForm] = useState({
     komoditas: '',
     grade: '' as string,
@@ -137,10 +139,28 @@ export default function SupplierPreOrderPage() {
       }
 
       const data = await res.json()
-      toast.success(`Pre-order berhasil dibuat! Deposit: Rp ${data.pre_order.deposit_dibayar.toLocaleString('id-ID')}`)
+
+      // Create pembayaran escrow record
+      try {
+        await fetch('/api/supplier/pembayaran', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pre_order_id: data.pre_order.id,
+            supplier_id: supplier.id,
+            jenis_pembayaran: jenisPembayaran,
+          }),
+        })
+      } catch {
+        // non-fatal: pembayaran record creation failed
+      }
+
+      const jumlahBayar = jenisPembayaran === 'deposit' ? deposit : totalNilai
+      toast.success(`Pre-order berhasil dibuat! ${jenisPembayaran === 'deposit' ? 'Deposit' : 'Pembayaran'}: Rp ${jumlahBayar.toLocaleString('id-ID')}. Silakan lakukan pembayaran.`)
 
       setDialogOpen(false)
       setShowPreview(false)
+      setJenisPembayaran('deposit')
       setForm({
         komoditas: '',
         grade: '',
@@ -280,22 +300,68 @@ export default function SupplierPreOrderPage() {
                 </div>
 
                 {totalNilai > 0 && (
-                  <Card className="bg-muted/50 shadow-none border-dashed">
-                    <CardContent className="p-3 space-y-1.5">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Total Nilai</span>
-                        <span className="font-semibold">{formatRupiah(totalNilai)}</span>
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <Label>Jenis Pembayaran</Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setJenisPembayaran('deposit')}
+                          className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center ${
+                            jenisPembayaran === 'deposit'
+                              ? 'border-tani-green bg-tani-green/5'
+                              : 'border-border hover:border-muted-foreground/30'
+                          }`}
+                        >
+                          <Wallet className={`h-5 w-5 ${jenisPembayaran === 'deposit' ? 'text-tani-green' : 'text-muted-foreground'}`} />
+                          <span className={`text-xs font-medium ${jenisPembayaran === 'deposit' ? 'text-tani-green' : 'text-muted-foreground'}`}>
+                            Deposit 10%
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">{formatRupiah(deposit)}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setJenisPembayaran('full')}
+                          className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center ${
+                            jenisPembayaran === 'full'
+                              ? 'border-tani-green bg-tani-green/5'
+                              : 'border-border hover:border-muted-foreground/30'
+                          }`}
+                        >
+                          <Wallet className={`h-5 w-5 ${jenisPembayaran === 'full' ? 'text-tani-green' : 'text-muted-foreground'}`} />
+                          <span className={`text-xs font-medium ${jenisPembayaran === 'full' ? 'text-tani-green' : 'text-muted-foreground'}`}>
+                            Bayar Full
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">{formatRupiah(totalNilai)}</span>
+                        </button>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Komisi Platform (2%)</span>
-                        <span>{formatRupiah(komisi)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Estimasi Deposit (10%)</span>
-                        <span className="font-semibold text-tani-amber">{formatRupiah(deposit)}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+
+                    <Card className="bg-muted/50 shadow-none border-dashed">
+                      <CardContent className="p-3 space-y-1.5">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Total Nilai</span>
+                          <span className="font-semibold">{formatRupiah(totalNilai)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Komisi Platform (2%)</span>
+                          <span>{formatRupiah(komisi)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            Fee QA (est.)
+                            <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0 rounded-full">ditanggung platform</span>
+                          </span>
+                          <span>{formatRupiah(volume * 50)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm font-semibold text-tani-amber">
+                          <span>{jenisPembayaran === 'deposit' ? 'Deposit (10%)' : 'Bayar Full (100%)'}</span>
+                          <span>{formatRupiah(jenisPembayaran === 'deposit' ? deposit : totalNilai)}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
                 )}
 
                 <DialogFooter>
@@ -360,9 +426,16 @@ export default function SupplierPreOrderPage() {
                         <span className="text-muted-foreground">Komisi Platform (2%)</span>
                         <span>{formatRupiah(komisi)}</span>
                       </div>
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          Fee QA (est.)
+                          <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0 rounded-full">ditanggung platform</span>
+                        </span>
+                        <span>{formatRupiah(volume * 50)}</span>
+                      </div>
                       <div className="flex justify-between text-sm font-semibold text-tani-amber">
-                        <span>Deposit Diperlukan (10%)</span>
-                        <span>{formatRupiah(deposit)}</span>
+                        <span>{jenisPembayaran === 'deposit' ? 'Deposit (10%)' : 'Bayar Full (100%)'}</span>
+                        <span>{formatRupiah(jenisPembayaran === 'deposit' ? deposit : totalNilai)}</span>
                       </div>
                     </div>
                   </CardContent>

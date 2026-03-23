@@ -40,31 +40,38 @@ interface NavItem {
   label: string
   href: string
   icon: string
+  requiresKYC?: boolean
+  hidden?: boolean
 }
 
 const NAV_ITEMS: Record<UserRole, NavItem[]> = {
   ketua_poktan: [
     { label: 'Dashboard', href: '/poktan/dashboard', icon: 'dashboard' },
     { label: 'Anggota', href: '/poktan/anggota', icon: 'users' },
-    { label: 'QA Inspeksi', href: '/poktan/qa', icon: 'qa' },
-    { label: 'Permintaan Supplier', href: '/poktan/pre-order', icon: 'preorder' },
-    { label: 'Logistik', href: '/poktan/logistik', icon: 'logistik' },
+    { label: 'Catatan Panen', href: '/poktan/panen', icon: 'katalog', requiresKYC: true },
+    { label: 'QA Inspeksi', href: '/poktan/qa', icon: 'qa', requiresKYC: true },
+    { label: 'Keuangan', href: '/poktan/keuangan', icon: 'kredit', requiresKYC: true },
+    { label: 'Permintaan Supplier', href: '/poktan/pre-order', icon: 'preorder', requiresKYC: true },
+    { label: 'Pengiriman', href: '/poktan/pengiriman', icon: 'logistik', requiresKYC: true },
+    { label: 'Logistik (Lama)', href: '/poktan/logistik', icon: 'logistik', hidden: true },
     { label: 'Status KYC', href: '/poktan/kyc', icon: 'kyc' },
     { label: 'Peraturan & SOP', href: '/poktan/sop', icon: 'sop' },
   ],
   supplier: [
     { label: 'Dashboard', href: '/supplier/dashboard', icon: 'dashboard' },
-    { label: 'Pre-Order', href: '/supplier/pre-order', icon: 'preorder' },
-    { label: 'Review QA', href: '/supplier/qa', icon: 'qa' },
-    { label: 'Transaksi', href: '/supplier/transaksi', icon: 'transaksi' },
+    { label: 'Pre-Order', href: '/supplier/pre-order', icon: 'preorder', requiresKYC: true },
+    { label: 'Pembayaran', href: '/supplier/pembayaran', icon: 'kredit', requiresKYC: true },
+    { label: 'Review QA', href: '/supplier/qa', icon: 'qa', requiresKYC: true },
+    { label: 'Transaksi', href: '/supplier/transaksi', icon: 'transaksi', requiresKYC: true },
     { label: 'Prediksi Harga', href: '/supplier/harga', icon: 'harga' },
+    { label: 'Pengiriman', href: '/supplier/pengiriman', icon: 'logistik', requiresKYC: true },
     { label: 'Smart Katalog', href: '/supplier/katalog', icon: 'katalog' },
     { label: 'Status KYC', href: '/supplier/kyc', icon: 'kyc' },
     { label: 'Peraturan & SOP', href: '/supplier/sop', icon: 'sop' },
   ],
   petani: [
     { label: 'Dashboard', href: '/petani/dashboard', icon: 'dashboard' },
-    { label: 'Riwayat', href: '/petani/riwayat', icon: 'riwayat' },
+    { label: 'Riwayat', href: '/petani/riwayat', icon: 'riwayat', requiresKYC: true },
     { label: 'Status KYC', href: '/petani/kyc', icon: 'kyc' },
     { label: 'Peraturan & SOP', href: '/petani/sop', icon: 'sop' },
   ],
@@ -72,6 +79,9 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: 'Dashboard', href: '/admin/dashboard', icon: 'dashboard' },
     { label: 'Poktan', href: '/admin/poktan', icon: 'poktan' },
     { label: 'Supplier', href: '/admin/supplier', icon: 'supplier' },
+    { label: 'Pembayaran', href: '/admin/pembayaran', icon: 'kredit' },
+    { label: 'Pencairan Poktan', href: '/admin/pencairan-poktan', icon: 'kredit' },
+    { label: 'Pengiriman', href: '/admin/pengiriman', icon: 'logistik' },
     { label: 'Transaksi', href: '/admin/transaksi', icon: 'transaksi' },
     { label: 'Compliance', href: '/admin/compliance', icon: 'compliance' },
     { label: 'Kredit', href: '/admin/kredit', icon: 'kredit' },
@@ -89,7 +99,13 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
 
   if (!role) return null
-  const items = NAV_ITEMS[role] || []
+
+  const isKYCVerified = user?.kyc_status === 'fully_verified'
+  const items = (NAV_ITEMS[role] || []).filter((item) => {
+    if (item.hidden) return false
+    if (item.requiresKYC && !isKYCVerified) return false
+    return true
+  })
 
   return (
     <aside

@@ -10,7 +10,13 @@ import Link from 'next/link'
 
 export default function MenungguReviewPage() {
   const user = useAuthStore((s) => s.user)
+  const role = useAuthStore((s) => s.role)
   const router = useRouter()
+
+  const dashboardPath = role === 'ketua_poktan' ? '/poktan/dashboard'
+    : role === 'supplier' ? '/supplier/dashboard'
+    : role === 'petani' ? '/petani/dashboard'
+    : '/login'
 
   // In a real implementation, this would fetch from Supabase
   // For now we use the user's kyc_status from the store or default to docs_submitted
@@ -84,11 +90,20 @@ export default function MenungguReviewPage() {
           </Card>
         )}
 
+        {role && (
+          <Button
+            className="w-full bg-tani-green hover:bg-tani-green/90 text-white"
+            onClick={() => router.push(dashboardPath)}
+          >
+            Masuk ke Dashboard
+            <ArrowRight className="h-4 w-4 ml-1" />
+          </Button>
+        )}
+
         <div className="text-center">
           <Link href="/login">
             <Button variant="ghost" className="text-sm text-muted-foreground">
               Kembali ke Halaman Login
-              <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
           </Link>
         </div>

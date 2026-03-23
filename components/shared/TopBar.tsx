@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Bell, Menu } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { NotificationPopover } from '@/components/shared/NotificationPopover'
 import { useAuthStore } from '@/store'
 
 interface TopBarProps {
@@ -13,19 +13,6 @@ interface TopBarProps {
 
 export function TopBar({ title, onMenuClick }: TopBarProps) {
   const user = useAuthStore((s) => s.user)
-  const [unreadCount, setUnreadCount] = useState(0)
-
-  useEffect(() => {
-    if (!user) return
-    fetch(`/api/notif?user_id=${user.id}`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data?.notifikasi) {
-          setUnreadCount(data.notifikasi.filter((n: { is_read: boolean }) => !n.is_read).length)
-        }
-      })
-      .catch(() => {})
-  }, [user])
 
   const initials = user?.nama_lengkap
     .split(' ')
@@ -52,14 +39,7 @@ export function TopBar({ title, onMenuClick }: TopBarProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-tani-red text-[10px] font-bold text-white">
-                {unreadCount}
-              </span>
-            )}
-          </Button>
+          <NotificationPopover />
           <Avatar className="h-8 w-8">
             <AvatarFallback className="bg-tani-green text-white text-xs">
               {initials}

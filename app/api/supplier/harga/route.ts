@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     // Get harga historis
     let histQuery = supabase
       .from('harga_historis')
-      .select('*')
+      .select('id, komoditas, wilayah, harga_per_kg, volume_total_kg, minggu')
       .order('minggu', { ascending: false })
       .limit(100)
 
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     // Get prediksi harga
     let predQuery = supabase
       .from('prediksi_harga')
-      .select('*')
+      .select('id, komoditas, wilayah, tren, estimasi_2_minggu, estimasi_4_minggu, faktor_penentu, catatan_penting, valid_hingga, created_at')
       .order('created_at', { ascending: false })
       .limit(20)
 

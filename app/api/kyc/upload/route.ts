@@ -18,12 +18,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!['ktp', 'selfie'].includes(docType)) {
+    const validDocTypes = ['ktp', 'selfie', 'surat_bpp', 'rekening']
+    if (!validDocTypes.includes(docType)) {
       return NextResponse.json(
-        { error: 'doc_type harus "ktp" atau "selfie"' },
+        { error: `doc_type harus salah satu dari: ${validDocTypes.join(', ')}` },
         { status: 400 }
       )
     }
+
+    const layer = parseInt(formData.get('layer') as string || '1', 10)
 
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
@@ -87,24 +90,94 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if both KTP and selfie are uploaded
+    // Check if all docs for this layer are uploaded
+    const LAYER_DOC_TYPES: Record<number, string[]> = {
+      1: ['ktp', 'selfie'],
+      2: ['surat_bpp', 'rekening'],
+    }
+
+    const DOC_LABELS: Record<string, string> = {
+      ktp: 'Foto KTP',
+      selfie: 'Selfie + KTP',
+      surat_bpp: 'Surat Rekomendasi BPP',
+      rekening: 'Foto Buku Rekening',
+    }
+
+    const requiredDocs = LAYER_DOC_TYPES[layer] || LAYER_DOC_TYPES[1]
+
     const { data: docs } = await supabase
       .from('kyc_documents')
       .select('doc_type')
       .eq('user_id', userId)
 
     const uploadedTypes = (docs || []).map((d) => d.doc_type)
-    const allDocsUploaded = uploadedTypes.includes('ktp') && uploadedTypes.includes('selfie')
+    const allDocsUploaded = requiredDocs.every((dt) => uploadedTypes.includes(dt))
 
     if (allDocsUploaded) {
-      // Update user kyc_status to docs_submitted
-      await supabase
+      const now = new Date().toISOString()
+
+      // Update user kyc_status to docs_submitted (only for layer 1, or if not yet set)
+      if (layer === 1) {
+        await supabase
+          .from('users')
+          .update({
+            kyc_status: 'docs_submitted',
+            kyc_submitted_at: now,
+          })
+          .eq('id', userId)
+      }
+
+      // Fetch user role for kyc_submissions
+      const { data: userProfile } = await supabase
         .from('users')
-        .update({
-          kyc_status: 'docs_submitted',
-          kyc_submitted_at: new Date().toISOString(),
-        })
+        .select('role')
         .eq('id', userId)
+        .single()
+
+      // Create/update kyc_submissions for the current layer
+      const { data: submission } = await supabase
+        .from('kyc_submissions')
+        .upsert(
+          {
+            user_id: userId,
+            user_role: userProfile?.role || 'petani',
+            layer,
+            status: 'pending',
+            submitted_at: now,
+          },
+          { onConflict: 'user_id,layer' }
+        )
+        .select('id')
+        .single()
+
+      // Create submission documents linked to the submission
+      if (submission) {
+        const { data: kycDocs } = await supabase
+          .from('kyc_documents')
+          .select('doc_type, file_path')
+          .eq('user_id', userId)
+          .in('doc_type', requiredDocs)
+
+        if (kycDocs && kycDocs.length > 0) {
+          // Delete old submission documents and re-insert
+          await supabase
+            .from('kyc_submission_documents')
+            .delete()
+            .eq('submission_id', submission.id)
+
+          const submissionDocs = kycDocs.map((doc) => ({
+            submission_id: submission.id,
+            nama: DOC_LABELS[doc.doc_type] || doc.doc_type,
+            file_path: doc.file_path,
+            status: 'pending' as const,
+            uploaded_at: now,
+          }))
+
+          await supabase
+            .from('kyc_submission_documents')
+            .insert(submissionDocs)
+        }
+      }
 
       // Insert notification for admin
       const { data: admins } = await supabase
@@ -115,8 +188,8 @@ export async function POST(request: NextRequest) {
       if (admins && admins.length > 0) {
         const notifications = admins.map((admin) => ({
           user_id: admin.id,
-          judul: 'Dokumen KYC Baru',
-          pesan: `User ${userId} telah mengirimkan dokumen KYC untuk direview.`,
+          judul: `Dokumen KYC Layer ${layer} Baru`,
+          pesan: `User ${userId} telah mengirimkan dokumen KYC Layer ${layer} untuk direview.`,
           tipe: 'kyc_review',
           link: '/admin/kyc',
           is_read: false,
@@ -129,7 +202,7 @@ export async function POST(request: NextRequest) {
       await supabase.from('kyc_audit_log').insert({
         user_id: userId,
         action: 'docs_submitted',
-        notes: 'Semua dokumen KYC telah diupload (KTP + Selfie)',
+        notes: `Dokumen KYC Layer ${layer} telah diupload (${requiredDocs.join(', ')})`,
       })
     }
 

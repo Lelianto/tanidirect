@@ -6,8 +6,8 @@ export async function GET() {
     const supabase = createServiceClient()
 
     const [milestonesRes, checklistRes] = await Promise.all([
-      supabase.from('onboarding_milestones').select('*').order('phase', { ascending: true }),
-      supabase.from('onboarding_checklist').select('*').order('kategori', { ascending: true }),
+      supabase.from('onboarding_milestones').select('id, phase, nama, deskripsi, target, current, unit, status, created_at').order('phase', { ascending: true }),
+      supabase.from('onboarding_checklist').select('id, kategori, item, is_done, pic').order('kategori', { ascending: true }),
     ])
 
     if (milestonesRes.error) {

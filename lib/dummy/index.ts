@@ -833,7 +833,7 @@ export const dummyKYCSubmissions: KYCSubmission[] = [
     user_nama: 'Pak Surya Wijaya',
     user_role: 'ketua_poktan',
     layer: 1,
-    trust_level: 'verified',
+    trust_level: 'baru',
     documents: [
       { id: 'doc-01', nama: 'KTP', status: 'approved', uploaded_at: '2026-01-20T08:00:00Z' },
       { id: 'doc-02', nama: 'Foto Selfie + KTP', status: 'approved', uploaded_at: '2026-01-20T08:05:00Z' },
@@ -851,7 +851,7 @@ export const dummyKYCSubmissions: KYCSubmission[] = [
     user_nama: 'Pak Surya Wijaya',
     user_role: 'ketua_poktan',
     layer: 2,
-    trust_level: 'bronze',
+    trust_level: 'baru',
     documents: [
       { id: 'doc-04', nama: 'Surat Keterangan Domisili', status: 'approved', uploaded_at: '2026-02-01T08:00:00Z' },
       { id: 'doc-05', nama: 'SK Poktan dari Dinas Pertanian', status: 'approved', uploaded_at: '2026-02-01T08:10:00Z' },
@@ -868,7 +868,7 @@ export const dummyKYCSubmissions: KYCSubmission[] = [
     user_nama: 'Pak Surya Wijaya',
     user_role: 'ketua_poktan',
     layer: 3,
-    trust_level: 'silver',
+    trust_level: 'terpercaya',
     documents: [
       { id: 'doc-07', nama: 'Rekening Bank atas Nama Poktan', status: 'pending', uploaded_at: '2026-03-10T08:00:00Z' },
       { id: 'doc-08', nama: 'Sertifikat Pelatihan QA', status: 'pending', uploaded_at: '2026-03-10T08:05:00Z' },
@@ -882,7 +882,7 @@ export const dummyKYCSubmissions: KYCSubmission[] = [
     user_nama: 'Rini Hartono',
     user_role: 'supplier',
     layer: 1,
-    trust_level: 'verified',
+    trust_level: 'baru',
     documents: [
       { id: 'doc-09', nama: 'KTP Pemilik', status: 'approved', uploaded_at: '2026-01-22T08:00:00Z' },
       { id: 'doc-10', nama: 'SIUP/NIB', status: 'approved', uploaded_at: '2026-01-22T08:05:00Z' },
@@ -899,7 +899,7 @@ export const dummyKYCSubmissions: KYCSubmission[] = [
     user_nama: 'Rini Hartono',
     user_role: 'supplier',
     layer: 2,
-    trust_level: 'bronze',
+    trust_level: 'baru',
     documents: [
       { id: 'doc-12', nama: 'Rekening Perusahaan', status: 'pending', uploaded_at: '2026-03-15T08:00:00Z' },
       { id: 'doc-13', nama: 'Surat Referensi Bank', status: 'pending', uploaded_at: '2026-03-15T08:05:00Z' },
@@ -913,7 +913,7 @@ export const dummyKYCSubmissions: KYCSubmission[] = [
     user_nama: 'Ahmad Hidayat',
     user_role: 'petani',
     layer: 1,
-    trust_level: 'verified',
+    trust_level: 'baru',
     documents: [
       { id: 'doc-18', nama: 'KTP', status: 'approved', uploaded_at: '2026-02-10T08:00:00Z' },
       { id: 'doc-19', nama: 'Foto Selfie + KTP', status: 'approved', uploaded_at: '2026-02-10T08:05:00Z' },

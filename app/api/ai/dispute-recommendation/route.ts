@@ -28,20 +28,20 @@ export async function POST(request: NextRequest) {
     // Fetch evidence
     const { data: evidence } = await supabase
       .from('dispute_evidence')
-      .select('*')
+      .select('id, tipe, deskripsi, uploaded_by')
       .eq('dispute_id', disputeId)
 
     // Fetch timeline
     const { data: timeline } = await supabase
       .from('dispute_timeline')
-      .select('*')
+      .select('id, aksi, oleh, catatan, created_at')
       .eq('dispute_id', disputeId)
       .order('created_at', { ascending: true })
 
     // Fetch QA inspection for this transaction
     const { data: qaInspeksi } = await supabase
       .from('qa_inspeksi')
-      .select('*')
+      .select('id, grade_hasil, skor_kualitas, status, supplier_review_status')
       .eq('transaksi_id', dispute.transaksi_id)
       .limit(1)
 

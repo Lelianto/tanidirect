@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { TopBar } from '@/components/shared/TopBar'
 import { StatCard } from '@/components/shared/StatCard'
 import { KomoditasCard } from '@/components/shared/KomoditasCard'
-import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store'
@@ -51,7 +50,7 @@ export default function PoktanDashboard() {
     fetch(`/api/kyc/status?user_id=${user.id}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
-        if (data?.status) setKycStatus(data.status)
+        if (data?.kyc_status) setKycStatus(data.kyc_status)
       })
       .catch(() => {})
   }, [user])
@@ -79,15 +78,13 @@ export default function PoktanDashboard() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard
             title="Total Anggota"
-            value={String(stats.jumlah_anggota || poktan?.jumlah_anggota || 0)}
+            value={String(stats.jumlah_anggota ?? 0)}
             icon={<Users className="h-5 w-5" />}
           />
           <StatCard
             title="Transaksi Aktif"
-            value={String(stats.transaksi_aktif || transaksiAktif.length)}
+            value={String(stats.transaksi_aktif ?? transaksiAktif.length)}
             icon={<ShoppingCart className="h-5 w-5" />}
-            trend="up"
-            trendValue="+2"
           />
           <StatCard
             title="Saldo Fee QA"
@@ -96,10 +93,8 @@ export default function PoktanDashboard() {
           />
           <StatCard
             title="Rating QA"
-            value={`${stats.skor_qa || poktan?.skor_qa || 0}/100`}
+            value={`${stats.skor_qa ?? 0}/100`}
             icon={<Star className="h-5 w-5" />}
-            trend="up"
-            trendValue="+2.5"
           />
         </div>
 

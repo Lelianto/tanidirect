@@ -103,9 +103,15 @@ export async function POST(request: NextRequest) {
       // Update trust_level on kyc_submissions
       await supabase
         .from('kyc_submissions')
-        .update({ trust_level: 'verified' })
+        .update({ trust_level: 'baru' })
         .eq('user_id', userId)
         .eq('status', 'pending')
+
+      // Set user trust_level ke 'baru' dengan skor awal 0
+      await supabase
+        .from('users')
+        .update({ trust_score: 0, trust_level: 'baru', trust_updated: new Date().toISOString() })
+        .eq('id', userId)
     } else if (action === 'reject') {
       await supabase
         .from('kyc_documents')

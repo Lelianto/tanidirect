@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Sidebar } from './Sidebar'
 import { BottomNav } from './BottomNav'
 import { SOPAgreementModal } from './SOPAgreementModal'
+import { KYCVerificationModal } from './KYCVerificationModal'
 import { useAuthStore } from '@/store'
 import type { UserRole } from '@/types'
 
@@ -17,6 +18,7 @@ export function AppShell({ children, requiredRole }: AppShellProps) {
   const router = useRouter()
   const { user, role, hasAgreedSOP } = useAuthStore()
   const [hydrated, setHydrated] = useState(false)
+  const [kycModalDismissed, setKycModalDismissed] = useState(false)
 
   useEffect(() => {
     // Wait for Zustand persist to hydrate from localStorage
@@ -41,6 +43,10 @@ export function AppShell({ children, requiredRole }: AppShellProps) {
   }
 
   const showSOPModal = role !== 'admin' && !hasAgreedSOP
+  const kycStatus = user.kyc_status
+  const isKYCVerified = kycStatus === 'fully_verified'
+  const isKYCInReview = kycStatus === 'docs_submitted' || kycStatus === 'layer1_passed'
+  const showKYCModal = !showSOPModal && role !== 'admin' && !isKYCVerified && !isKYCInReview && !kycModalDismissed
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,6 +58,7 @@ export function AppShell({ children, requiredRole }: AppShellProps) {
       </div>
       <BottomNav />
       <SOPAgreementModal open={showSOPModal} />
+      <KYCVerificationModal open={showKYCModal} onDismiss={() => setKycModalDismissed(true)} />
     </div>
   )
 }

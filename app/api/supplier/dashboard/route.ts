@@ -19,15 +19,15 @@ export async function GET(request: NextRequest) {
     }
 
     const [supplierRes, preOrderRes, transaksiRes] = await Promise.all([
-      supabase.from('supplier').select('*').eq('id', supplierId!).single(),
-      supabase.from('pre_order').select('*').eq('supplier_id', supplierId!).order('created_at', { ascending: false }),
-      supabase.from('transaksi').select('*').eq('supplier_id', supplierId!).order('created_at', { ascending: false }),
+      supabase.from('supplier').select('id, nama_perusahaan, npwp, jenis_usaha, kapasitas_bulanan_ton, wilayah_operasi, deposit_escrow, rating, total_preorder, is_verified, created_at').eq('id', supplierId!).single(),
+      supabase.from('pre_order').select('id, komoditas, grade, volume_kg, harga_penawaran_per_kg, tanggal_dibutuhkan, wilayah_tujuan, status, deposit_dibayar, poktan_matched_id, created_at').eq('supplier_id', supplierId!).order('created_at', { ascending: false }),
+      supabase.from('transaksi').select('id, komoditas, grade, volume_estimasi_kg, volume_aktual_kg, harga_per_kg, total_nilai, status, created_at').eq('supplier_id', supplierId!).order('created_at', { ascending: false }),
     ])
 
     const txIds = (transaksiRes.data || []).map(t => t.id)
     let qaList: unknown[] = []
     if (txIds.length > 0) {
-      const { data } = await supabase.from('qa_inspeksi').select('*').in('transaksi_id', txIds)
+      const { data } = await supabase.from('qa_inspeksi').select('id, transaksi_id, grade_hasil, skor_kualitas, status, supplier_review_status, created_at').in('transaksi_id', txIds)
       qaList = data || []
     }
 

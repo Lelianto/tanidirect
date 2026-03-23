@@ -30,7 +30,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { WilayahSelector, type WilayahValue } from '@/components/register/WilayahSelector'
 import { StepIndicator } from '@/components/register/StepIndicator'
 import { useAuthStore } from '@/store'
-import { KOMODITAS } from '@/lib/constants/komoditas'
+import { useKomoditasConfig } from '@/hooks/useKomoditasConfig'
 import { PROVINSI } from '@/lib/constants/wilayah'
 import {
   roleSchema,
@@ -113,6 +113,7 @@ const JENIS_USAHA = ['Distributor', 'Restoran & Katering', 'Retail Modern', 'Eks
 export default function RegisterPage() {
   const router = useRouter()
   const setUser = useAuthStore((s) => s.setUser)
+  const { namaList: KOMODITAS } = useKomoditasConfig()
   const [step, setStep] = React.useState(0)
   const [errors, setErrors] = React.useState<Record<string, string>>({})
 
@@ -942,15 +943,15 @@ export default function RegisterPage() {
               Selamat datang, <strong>{dataDiri.nama_lengkap}</strong>
             </p>
             <p className="text-xs text-muted-foreground mt-2">
-              Akun Anda sebagai{' '}
-              <span className="font-semibold capitalize">
-                {role === 'ketua_poktan' ? 'Ketua Poktan' : role}
-              </span>{' '}
-              telah dibuat. Anda bisa langsung masuk ke dashboard.
+              Langkah selanjutnya: verifikasi identitas untuk mengakses seluruh fitur platform.
             </p>
           </div>
-          <Button className="w-full" onClick={goToDashboard}>
-            Masuk ke Dashboard
+          <Button className="w-full bg-tani-green hover:bg-tani-green/90" onClick={() => router.push('/register/kyc')}>
+            Verifikasi Identitas (KYC)
+            <ArrowRight className="h-4 w-4 ml-1" />
+          </Button>
+          <Button variant="ghost" className="w-full text-muted-foreground" onClick={goToDashboard}>
+            Lewati, masuk ke Dashboard
           </Button>
         </div>
       )

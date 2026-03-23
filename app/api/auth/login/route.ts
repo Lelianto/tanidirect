@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     // Fetch user profile from public.users
     const { data: profile, error: profileError } = await supabase
       .from('users')
-      .select('*')
+      .select('id, role, nama_lengkap, no_hp, no_ktp, foto_url, provinsi, kabupaten, kecamatan, alamat, is_verified, is_active, kyc_status, kyc_submitted_at, kyc_reviewed_at, created_at, updated_at')
       .eq('id', authData.user.id)
       .single()
 
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     // Fetch rekening
     const { data: rekening } = await supabase
       .from('rekening')
-      .select('*')
+      .select('id, metode, provider, nomor, atas_nama, is_primary')
       .eq('user_id', profile.id)
       .eq('is_primary', true)
       .maybeSingle()
@@ -65,14 +65,14 @@ export async function POST(request: NextRequest) {
     if (profile.role === 'ketua_poktan') {
       const { data } = await supabase
         .from('poktan')
-        .select('*')
+        .select('id, nama_poktan, kode_poktan, desa, kecamatan, kabupaten, provinsi, komoditas_utama, jumlah_anggota, skor_qa, skor_ketepatan, total_transaksi, is_qa_certified, status_sertifikasi, created_at')
         .eq('ketua_id', profile.id)
         .maybeSingle()
       roleData = data
     } else if (profile.role === 'supplier') {
       const { data } = await supabase
         .from('supplier')
-        .select('*')
+        .select('id, nama_perusahaan, npwp, jenis_usaha, kapasitas_bulanan_ton, wilayah_operasi, deposit_escrow, rating, total_preorder, is_verified, created_at')
         .eq('user_id', profile.id)
         .maybeSingle()
       roleData = data

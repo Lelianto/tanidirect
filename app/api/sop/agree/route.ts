@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 
+const SOP_LABELS: Record<string, string> = {
+  sop_platform_v1: 'Syarat & Ketentuan Platform taninesia',
+  terms_and_conditions_v1: 'Syarat & Ketentuan Platform taninesia',
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { user_id, sop_key } = await request.json()
@@ -52,7 +57,7 @@ export async function POST(request: NextRequest) {
     await supabase.from('notifikasi').insert({
       user_id,
       judul: 'SOP Disetujui',
-      pesan: `Anda telah menyetujui ${sop_key}`,
+      pesan: `Anda telah menyetujui ${SOP_LABELS[sop_key] || sop_key}`,
       tipe: 'sop_agreement',
       is_read: false,
     })

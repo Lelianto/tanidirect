@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { formatRupiah } from '@/lib/utils/currency'
-import { KOMODITAS } from '@/lib/constants/komoditas'
+import { useKomoditasConfig } from '@/hooks/useKomoditasConfig'
 import { PROVINSI } from '@/lib/constants/wilayah'
 import {
   TrendingUp, TrendingDown, Minus, Search, AlertTriangle,
@@ -25,7 +25,8 @@ import {
 } from 'recharts'
 
 export default function SupplierHargaPage() {
-  const [komoditas, setKomoditas] = useState('Cabai Merah')
+  const { namaList: KOMODITAS } = useKomoditasConfig()
+  const [komoditas, setKomoditas] = useState('Cabai Merah Besar Segar')
   const [wilayah, setWilayah] = useState('Jawa Barat')
   const [hasAnalyzed, setHasAnalyzed] = useState(true)
   const [hargaHistoris, setHargaHistoris] = useState<any[]>([])

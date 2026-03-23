@@ -7,6 +7,7 @@ export type StatusTransaksi =
 export type StatusPreOrder = 'open' | 'matched' | 'confirmed' | 'fulfilled' | 'cancelled'
 export type StatusQA = 'pending' | 'lulus' | 'gagal' | 'perlu_tinjauan'
 export type TierLogistik = 'first_mile' | 'middle_mile' | 'last_mile'
+export type StatusPengiriman = 'disiapkan' | 'dijemput' | 'dalam_perjalanan' | 'tiba_di_tujuan' | 'diterima'
 export type StatusKredit = 'belum_ada' | 'pending' | 'disetujui' | 'ditolak' | 'aktif' | 'lunas'
 export type TingkatRisiko = 'rendah' | 'sedang' | 'tinggi' | 'kritis'
 
@@ -34,6 +35,10 @@ export interface Pencairan {
   selesai_at?: string
 }
 
+export type KYCStatus =
+  | 'pending' | 'docs_incomplete' | 'docs_submitted' | 'docs_revision'
+  | 'layer1_passed' | 'layer1_failed' | 'fully_verified' | 'suspended'
+
 export interface User {
   id: string
   role: UserRole
@@ -47,6 +52,7 @@ export interface User {
   alamat?: string
   is_verified: boolean
   is_active: boolean
+  kyc_status?: KYCStatus
   rekening?: RekeningInfo
   created_at: string
   updated_at: string
@@ -147,10 +153,26 @@ export interface Transaksi {
   tanggal_panen_estimasi?: string
   tanggal_serah_terima?: string
   catatan?: string
+  settled_at?: string
+  settled_by?: string
   created_at: string
   updated_at: string
   poktan?: Poktan
   supplier?: Supplier
+}
+
+export interface PencairanPoktan {
+  id: string
+  poktan_id: string
+  jumlah: number
+  biaya_admin: number
+  jumlah_diterima: number
+  rekening_id: string
+  status: StatusPencairan
+  catatan?: string
+  created_at: string
+  selesai_at?: string
+  poktan?: Poktan
 }
 
 export interface KontribusiPetani {
@@ -214,6 +236,43 @@ export interface Logistik {
   asuransi_kargo: boolean
   biaya_logistik?: number
   created_at: string
+}
+
+export interface Pengiriman {
+  id: string
+  transaksi_id: string
+  poktan_id: string
+  supplier_id: string
+  pengirim_nama?: string
+  pengirim_telepon?: string
+  kendaraan_info?: string
+  alamat_asal: string
+  alamat_tujuan: string
+  current_status: StatusPengiriman
+  disiapkan_at?: string
+  dijemput_at?: string
+  dalam_perjalanan_at?: string
+  tiba_di_tujuan_at?: string
+  diterima_at?: string
+  catatan_alamat?: string
+  created_at: string
+  updated_at: string
+  transaksi?: Transaksi
+  poktan?: Poktan
+  supplier?: Supplier
+  events?: PengirimanEvent[]
+}
+
+export interface PengirimanEvent {
+  id: string
+  pengiriman_id: string
+  status: StatusPengiriman
+  catatan?: string
+  foto_url?: string
+  lokasi_teks?: string
+  created_by: string
+  created_at: string
+  user?: User
 }
 
 export interface Kredit {
@@ -295,6 +354,33 @@ export interface Notifikasi {
   created_at: string
 }
 
+// ============ PEMBAYARAN ESCROW ============
+export type StatusPembayaran = 'menunggu_pembayaran' | 'menunggu_verifikasi' | 'terverifikasi' | 'ditolak' | 'refunded'
+export type JenisPembayaran = 'deposit' | 'full'
+
+export interface PembayaranEscrow {
+  id: string
+  pre_order_id: string
+  supplier_id: string
+  jenis_pembayaran: JenisPembayaran
+  jumlah: number
+  total_nilai_po: number
+  metode_transfer?: string
+  bukti_transfer_url?: string
+  catatan_supplier?: string
+  status: StatusPembayaran
+  admin_id?: string
+  admin_catatan?: string
+  verified_at?: string
+  rejected_at?: string
+  refunded_at?: string
+  refund_catatan?: string
+  created_at: string
+  updated_at: string
+  pre_order?: PreOrder
+  supplier?: Supplier
+}
+
 // ============ UI / COMPONENT TYPES ============
 export interface DashboardStats {
   totalAnggota: number
@@ -332,7 +418,7 @@ export interface NavItem {
 }
 
 // ============ KYC ============
-export type TrustLevel = 'unverified' | 'verified' | 'bronze' | 'silver' | 'gold' | 'platinum'
+export type TrustLevel = 'unverified' | 'baru' | 'terpercaya' | 'andalan' | 'bintang'
 export type KYCLayerStatus = 'belum' | 'pending' | 'approved' | 'rejected' | 'revisi'
 
 export interface KYCDocument {
@@ -422,7 +508,58 @@ export interface OnboardingChecklist {
   pic?: string
 }
 
-// ============ SMART CATALOG ============
+// ============ CATATAN PANEN ============
+export type StatusPanen = 'draft' | 'tersedia' | 'terjual' | 'expired'
+
+export interface CatatanPanen {
+  id: string
+  poktan_id: string
+  pencatat_id: string
+  komoditas: string
+  grade: KomoditasGrade
+  volume_panen_kg: number
+  volume_terjual_kg: number
+  tanggal_panen: string
+  harga_per_kg?: number
+  foto_urls: string[]
+  catatan?: string
+  status: StatusPanen
+  published_at?: string
+  created_at: string
+  updated_at: string
+  poktan?: Poktan
+  kontribusi?: KontribusiPanen[]
+}
+
+export interface KontribusiPanen {
+  id: string
+  catatan_panen_id: string
+  petani_id: string
+  volume_kg: number
+  created_at: string
+  petani?: User
+}
+
+// ============ KOMODITAS CONFIG ============
+export type ZonaKelayakan = 'antar_pulau' | 'cold_chain' | 'lokal_saja'
+
+export interface KomoditasConfig {
+  id: string
+  nama: string
+  kategori?: string
+  zona: ZonaKelayakan
+  daya_tahan_hari: number
+  susut_persen: number
+  perlu_cold_chain: boolean
+  layak_antar_pulau: boolean
+  harga_petani_ref?: number
+  harga_jakarta_ref?: number
+  biaya_kapal_ref?: number
+  catatan?: string
+  created_at: string
+  updated_at: string
+}
+
 // ============ AI RESPONSE TYPES ============
 export interface DisputeRecommendationResponse {
   rekomendasiResolusi: 'kompensasi' | 'tolak' | 'mediasi' | 'eskalasi'
@@ -446,7 +583,7 @@ export interface KatalogKomoditas {
   grade: KomoditasGrade
   harga_per_kg: number
   volume_tersedia_kg: number
-  poktan_nama: string
+  poktan_nama?: string
   poktan_id: string
   wilayah: string
   jadwal_panen: string
@@ -456,4 +593,16 @@ export interface KatalogKomoditas {
   skor_harga: number
   margin_persen: number
   foto_url?: string
+  catatan_panen_id?: string
+  poktan?: {
+    id: string
+    nama_poktan: string
+    kabupaten: string
+    provinsi: string
+  } | null
+  catatan_panen?: {
+    foto_urls: string[]
+    catatan?: string
+    tanggal_panen: string
+  } | null
 }

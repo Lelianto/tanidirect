@@ -1,0 +1,67 @@
+name: Supabase Cron Jobs
+
+on:
+  schedule:
+    # Cleanup: every day at 02:00 UTC
+    - cron: '0 2 * * *'
+    # Keepalive: every 5 days at 00:00 UTC
+    - cron: '0 0 */5 * *'
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'Which job to run'
+        required: true
+        type: choice
+        options:
+          - cleanup
+          - keepalive
+          - both
+
+jobs:
+  cleanup:
+    if: >
+      github.event.schedule == '0 2 * * *' ||
+      github.event.inputs.job == 'cleanup' ||
+      github.event.inputs.job == 'both'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run cleanup
+        run: |
+          response=$(curl -s -w "\n%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/cleanup")
+
+          http_code=$(echo "$response" | tail -1)
+          body=$(echo "$response" | head -n -1)
+
+          echo "Status: $http_code"
+          echo "Response: $body"
+
+          if [ "$http_code" != "200" ]; then
+            echo "::error::Cleanup failed with status $http_code"
+            exit 1
+          fi
+
+  keepalive:
+    if: >
+      github.event.schedule == '0 0 */5 * *' ||
+      github.event.inputs.job == 'keepalive' ||
+      github.event.inputs.job == 'both'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          response=$(curl -s -w "\n%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/keepalive")
+
+          http_code=$(echo "$response" | tail -1)
+          body=$(echo "$response" | head -n -1)
+
+          echo "Status: $http_code"
+          echo "Response: $body"
+
+          if [ "$http_code" != "200" ]; then
+            echo "::error::Keepalive failed with status $http_code"
+            exit 1
+          fi

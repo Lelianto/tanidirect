@@ -85,15 +85,36 @@ export default function SupplierDashboard() {
   const nilaiTransaksiBulan = transaksiSelesai.reduce((sum, t) => sum + (t.total_nilai || 0), 0)
   const preOrderAktif = preOrders.filter((po: any) => !['fulfilled', 'cancelled'].includes(po.status))
 
-  // Chart data for volume 6 bulan
+  // Chart data: aggregate transaksi selesai per bulan (6 bulan terakhir)
   const chartData = useMemo(() => {
-    const months = ['Okt', 'Nov', 'Des', 'Jan', 'Feb', 'Mar']
-    return months.map((m, i) => ({
-      bulan: m,
-      volume: Math.round(3000 + Math.random() * 8000),
-      transaksi: Math.round(2 + Math.random() * 6),
+    const now = new Date()
+    const months: { key: string; label: string }[] = []
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      months.push({
+        key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+        label: d.toLocaleString('id-ID', { month: 'short' }),
+      })
+    }
+
+    const grouped: Record<string, { volume: number; transaksi: number }> = {}
+    for (const m of months) grouped[m.key] = { volume: 0, transaksi: 0 }
+
+    for (const t of transaksiSelesai) {
+      const date = new Date(t.created_at)
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      if (grouped[key]) {
+        grouped[key].volume += Number(t.volume_aktual_kg || t.volume_estimasi_kg || 0)
+        grouped[key].transaksi += 1
+      }
+    }
+
+    return months.map((m) => ({
+      bulan: m.label,
+      volume: Math.round(grouped[m.key].volume),
+      transaksi: grouped[m.key].transaksi,
     }))
-  }, [])
+  }, [transaksiSelesai])
 
   const trendIcon = prediksi?.tren === 'naik'
     ? <ArrowUp className="h-4 w-4 text-tani-red" />

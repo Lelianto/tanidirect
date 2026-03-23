@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     // Fetch petani profile
     const { data: petani, error: petaniError } = await supabase
       .from('users')
-      .select('*')
+      .select('id, nama_lengkap, provinsi, kabupaten, is_verified')
       .eq('id', petaniId)
       .single()
 
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     // Fetch kredit history
     const { data: kreditHistory } = await supabase
       .from('kredit')
-      .select('*')
+      .select('id, status')
       .eq('petani_id', petaniId)
 
     const kreditList = kreditHistory || []

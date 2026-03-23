@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     const { data: logistik, error } = await supabase
       .from('logistik')
-      .select('*')
+      .select('id, transaksi_id, tier, transporter_nama, transporter_hp, kendaraan_plat, titik_asal, titik_tujuan, estimasi_tiba, aktual_tiba, status, biaya_logistik, created_at')
       .in('transaksi_id', txIds)
       .order('created_at', { ascending: false })
 
