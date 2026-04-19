@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { requireRole } from '@/lib/auth'
 
 // GET: ambil semua platform config
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = createServiceClient()
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
     const { data, error } = await supabase
       .from('platform_config')
       .select('key, value, updated_at')
@@ -28,13 +30,15 @@ export async function GET() {
 // PUT: update satu key di platform config
 export async function PUT(request: NextRequest) {
   try {
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
+
     const { key, value, adminId } = await request.json()
 
     if (!key || !value) {
       return NextResponse.json({ error: 'key dan value wajib diisi' }, { status: 400 })
     }
-
-    const supabase = createServiceClient()
 
     const { error } = await supabase
       .from('platform_config')

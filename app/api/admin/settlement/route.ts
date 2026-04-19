@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { requireRole } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
+
     const { transaksi_id, admin_id } = await request.json()
 
     if (!transaksi_id || !admin_id) {
@@ -11,8 +15,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-
-    const supabase = createServiceClient()
 
     // 1. Fetch transaksi with poktan
     const { data: tx, error: txError } = await supabase
@@ -163,14 +165,16 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
+
     const { searchParams } = new URL(request.url)
     const transaksi_id = searchParams.get('transaksi_id')
 
     if (!transaksi_id) {
       return NextResponse.json({ error: 'transaksi_id required' }, { status: 400 })
     }
-
-    const supabase = createServiceClient()
 
     // Get transaksi
     const { data: tx } = await supabase

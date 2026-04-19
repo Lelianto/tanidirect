@@ -12,13 +12,19 @@ import {
   ClipboardCheck, CheckCircle, XCircle, AlertTriangle,
   Clock, MessageSquare, ShieldCheck, ShieldX, Loader2,
 } from 'lucide-react'
+import type { Supplier, QAInspeksi, Transaksi, Poktan } from '@/types'
+
+interface QAWithRelations extends QAInspeksi {
+  transaksi?: Transaksi
+  poktan?: Poktan
+}
 
 type Tab = 'review' | 'riwayat'
 
 export default function SupplierQAReviewPage() {
   const user = useAuthStore((s) => s.user)
-  const [supplier, setSupplier] = useState<any>(null)
-  const [allQA, setAllQA] = useState<any[]>([])
+  const [supplier, setSupplier] = useState<Supplier | null>(null)
+  const [allQA, setAllQA] = useState<QAWithRelations[]>([])
   const [activeTab, setActiveTab] = useState<Tab>('review')
   const [disputeFor, setDisputeFor] = useState<string | null>(null)
   const [disputeReason, setDisputeReason] = useState('')
@@ -46,7 +52,7 @@ export default function SupplierQAReviewPage() {
     if (!supplier?.id) return
     async function fetchQA() {
       try {
-        const res = await fetch(`/api/supplier/qa?supplier_id=${supplier.id}`)
+        const res = await fetch(`/api/supplier/qa?supplier_id=${supplier!.id}`)
         if (res.ok) {
           const data = await res.json()
           if (data.success) setAllQA(data.inspections || [])
@@ -67,10 +73,10 @@ export default function SupplierQAReviewPage() {
   }
 
   const pendingReview = allQA.filter(
-    (qa: any) => qa.status === 'perlu_tinjauan' && qa.supplier_review_status === 'pending' && !reviewedIds.has(qa.id)
+    (qa) => qa.status === 'perlu_tinjauan' && qa.supplier_review_status === 'pending' && !reviewedIds.has(qa.id)
   )
   const riwayat = [
-    ...allQA.filter((qa: any) => qa.supplier_review_status !== 'pending' || reviewedIds.has(qa.id)),
+    ...allQA.filter((qa) => qa.supplier_review_status !== 'pending' || reviewedIds.has(qa.id)),
   ]
 
   async function handleApprove(qaId: string) {
@@ -131,11 +137,11 @@ export default function SupplierQAReviewPage() {
   }
 
   function getTransaction(txId: string) {
-    return allQA.find((qa: any) => qa.transaksi_id === txId)?.transaksi || null
+    return allQA.find((qa) => qa.transaksi_id === txId)?.transaksi || null
   }
 
   function getPoktan(poktanId: string) {
-    const qa = allQA.find((q: any) => q.poktan_id === poktanId)
+    const qa = allQA.find((q) => q.poktan_id === poktanId)
     return qa?.poktan || null
   }
 

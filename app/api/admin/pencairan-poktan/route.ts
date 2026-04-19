@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { requireRole } from '@/lib/auth'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = createServiceClient()
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
 
     const { data, error } = await supabase
       .from('pencairan_poktan')
@@ -24,6 +26,10 @@ export async function GET() {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
+
     const { pencairan_id, action, admin_id, catatan } = await request.json()
 
     if (!pencairan_id || !action || !admin_id) {
@@ -39,8 +45,6 @@ export async function PATCH(request: NextRequest) {
         { status: 400 }
       )
     }
-
-    const supabase = createServiceClient()
 
     // Get pencairan
     const { data: pencairan, error: fetchError } = await supabase
@@ -60,7 +64,7 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    const updateData: Record<string, any> = {
+    const updateData: Record<string, unknown> = {
       status: action,
       selesai_at: new Date().toISOString(),
     }

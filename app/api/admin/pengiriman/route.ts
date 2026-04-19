@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { requireRole } from '@/lib/auth'
 import type { StatusPengiriman } from '@/types'
 
 const STATUS_ORDER: StatusPengiriman[] = [
@@ -9,9 +9,11 @@ const STATUS_ORDER: StatusPengiriman[] = [
 // GET — List all pengiriman for admin
 export async function GET(request: NextRequest) {
   try {
-    const status = request.nextUrl.searchParams.get('status')
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
 
-    const supabase = createServiceClient()
+    const status = request.nextUrl.searchParams.get('status')
 
     let query = supabase
       .from('pengiriman')
@@ -43,6 +45,10 @@ export async function GET(request: NextRequest) {
 // POST — Admin adds event as fallback (same logic as poktan)
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
+
     const { pengiriman_id, status, catatan, foto_url, lokasi_teks, admin_id } = await request.json()
 
     if (!pengiriman_id || !status || !admin_id) {
@@ -55,8 +61,6 @@ export async function POST(request: NextRequest) {
     if (!STATUS_ORDER.includes(status)) {
       return NextResponse.json({ error: `Status tidak valid: ${status}` }, { status: 400 })
     }
-
-    const supabase = createServiceClient()
 
     // Get current pengiriman
     const { data: pengiriman, error: pError } = await supabase
@@ -99,8 +103,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Notify poktan ketua + supplier
-    const ketuaId = (pengiriman.poktan as any)?.ketua_id
-    const supplierUserId = (pengiriman.supplier as any)?.user_id
+    const ketuaId = (pengiriman.poktan as { ketua_id?: string })?.ketua_id
+    const supplierUserId = (pengiriman.supplier as { user_id?: string })?.user_id
 
     const statusLabel: Record<string, string> = {
       disiapkan: 'Barang Disiapkan',

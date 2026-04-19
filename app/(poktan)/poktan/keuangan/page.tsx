@@ -23,6 +23,7 @@ import {
   Wallet, ClipboardCheck, ArrowDownToLine, Loader2,
   CheckCircle, Clock, XCircle, Banknote,
 } from 'lucide-react'
+import type { PencairanPoktan, QAInspeksi } from '@/types'
 
 const BIAYA_ADMIN = 2500
 const BANK_OPTIONS = ['BRI', 'BCA', 'BNI', 'Mandiri', 'BSI']
@@ -39,8 +40,8 @@ export default function PoktanKeuanganPage() {
   const [poktanId, setPoktanId] = useState<string | null>(null)
   const [saldo, setSaldo] = useState(0)
   const [totalFee, setTotalFee] = useState(0)
-  const [pencairanList, setPencairanList] = useState<any[]>([])
-  const [qaList, setQaList] = useState<any[]>([])
+  const [pencairanList, setPencairanList] = useState<PencairanPoktan[]>([])
+  const [qaList, setQaList] = useState<QAInspeksi[]>([])
   const [loading, setLoading] = useState(true)
 
   // Withdrawal dialog
@@ -65,7 +66,7 @@ export default function PoktanKeuanganPage() {
           setPoktanId(data.poktan.id)
         }
       })
-      .catch(() => {})
+      .catch(() => toast.error('Gagal memuat data poktan'))
   }, [user?.id])
 
   const fetchData = useCallback(async () => {
@@ -139,8 +140,8 @@ export default function PoktanKeuanganPage() {
   const providerOptions = form.metode === 'bank' ? BANK_OPTIONS : EWALLET_OPTIONS
 
   const totalCaired = pencairanList
-    .filter((p: any) => p.status === 'berhasil')
-    .reduce((sum: number, p: any) => sum + Number(p.jumlah_diterima), 0)
+    .filter((p) => p.status === 'berhasil')
+    .reduce((sum, p) => sum + Number(p.jumlah_diterima), 0)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -189,7 +190,7 @@ export default function PoktanKeuanganPage() {
               <p className="text-sm text-muted-foreground text-center py-6">Belum ada inspeksi QA</p>
             ) : (
               <div className="space-y-3">
-                {qaList.slice(0, 10).map((qa: any) => (
+                {qaList.slice(0, 10).map((qa) => (
                   <div key={qa.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
                     <div>
                       <p className="text-sm font-medium">{qa.komoditas}</p>
@@ -218,7 +219,7 @@ export default function PoktanKeuanganPage() {
               <p className="text-sm text-muted-foreground text-center py-6">Belum ada pencairan</p>
             ) : (
               <div className="space-y-3">
-                {pencairanList.map((p: any) => {
+                {pencairanList.map((p) => {
                   const cfg = STATUS_CONFIG[p.status] || STATUS_CONFIG.diproses
                   return (
                     <div key={p.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">

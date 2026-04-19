@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { requireRole } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServiceClient()
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
     const roleFilter = request.nextUrl.searchParams.get('role') // 'petani' | 'ketua_poktan'
 
     // Fetch users with role petani or ketua_poktan
@@ -93,14 +95,16 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
+
     const body = await request.json()
     const { user_id, action, ...fields } = body
 
     if (!user_id || !action) {
       return NextResponse.json({ error: 'user_id dan action wajib diisi' }, { status: 400 })
     }
-
-    const supabase = createServiceClient()
 
     if (action === 'toggle_active') {
       const { data: user } = await supabase

@@ -19,6 +19,7 @@ import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select'
 import { useAuthStore } from '@/store'
+import { toast } from 'sonner'
 import { formatRupiah, formatKg } from '@/lib/utils/currency'
 import { formatTanggalSingkat } from '@/lib/utils/date'
 import { GRADE_COLORS } from '@/lib/constants/komoditas'
@@ -26,14 +27,14 @@ import {
   ShoppingCart, FileCheck, CheckCircle, History,
   Filter, Send,
 } from 'lucide-react'
-import type { PreOrder } from '@/types'
+import type { PreOrder, Poktan } from '@/types'
 
 export default function PreOrderPage() {
   const user = useAuthStore((s) => s.user)
 
-  const [poktan, setPoktan] = useState<any>(null)
-  const [matchedPreOrders, setMatchedPreOrders] = useState<any[]>([])
-  const [openPreOrders, setOpenPreOrders] = useState<any[]>([])
+  const [poktan, setPoktan] = useState<Poktan | null>(null)
+  const [matchedPreOrders, setMatchedPreOrders] = useState<PreOrder[]>([])
+  const [openPreOrders, setOpenPreOrders] = useState<PreOrder[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -48,7 +49,7 @@ export default function PreOrderPage() {
           setOpenPreOrders(data.open_pre_orders || [])
         }
       })
-      .catch(() => {})
+      .catch(() => toast.error('Gagal memuat data pre-order'))
       .finally(() => setLoading(false))
   }, [user])
 
@@ -63,7 +64,7 @@ export default function PreOrderPage() {
   const [tanggalEstimasi, setTanggalEstimasi] = useState('')
   const [catatanPenawaran, setCatatanPenawaran] = useState('')
 
-  function getSupplierName(po: any) {
+  function getSupplierName(po: PreOrder) {
     return po.supplier?.nama_perusahaan || '-'
   }
 
@@ -72,27 +73,27 @@ export default function PreOrderPage() {
 
   // Pre-orders filtered by tabs
   const poTersedia = useMemo(() => {
-    let list = openPreOrders.filter((po: any) => po.status === 'open')
+    let list = openPreOrders.filter((po) => po.status === 'open')
     if (filterKomoditas !== 'semua') {
-      list = list.filter((po: any) => po.komoditas === filterKomoditas)
+      list = list.filter((po) => po.komoditas === filterKomoditas)
     }
     if (filterGrade !== 'semua') {
-      list = list.filter((po: any) => po.grade === filterGrade)
+      list = list.filter((po) => po.grade === filterGrade)
     }
     return list
   }, [openPreOrders, filterKomoditas, filterGrade])
 
   const poDiajukan = matchedPreOrders.filter(
-    (po: any) => po.status === 'matched'
+    (po) => po.status === 'matched'
   )
   const poDisetujui = matchedPreOrders.filter(
-    (po: any) => po.status === 'confirmed'
+    (po) => po.status === 'confirmed'
   )
   const poRiwayat = matchedPreOrders.filter(
-    (po: any) => ['fulfilled', 'cancelled'].includes(po.status)
+    (po) => ['fulfilled', 'cancelled'].includes(po.status)
   )
 
-  const komoditasOptions = [...new Set(openPreOrders.filter((po: any) => po.status === 'open').map((po: any) => po.komoditas))]
+  const komoditasOptions = [...new Set(openPreOrders.filter((po) => po.status === 'open').map((po) => po.komoditas))]
 
   function openKirimPenawaran(po: PreOrder) {
     setSelectedPO(po)

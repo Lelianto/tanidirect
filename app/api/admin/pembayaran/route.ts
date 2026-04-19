@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { requireRole } from '@/lib/auth'
 
 // GET — List all pembayaran for admin verification
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
+
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
-
-    const supabase = createServiceClient()
 
     let query = supabase
       .from('pembayaran_escrow')
@@ -21,6 +23,8 @@ export async function GET(request: NextRequest) {
     if (status) {
       query = query.eq('status', status)
     }
+
+    query = query.limit(100)
 
     const { data, error } = await query
 
@@ -37,6 +41,10 @@ export async function GET(request: NextRequest) {
 // PATCH — Verify or reject pembayaran
 export async function PATCH(request: NextRequest) {
   try {
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
+
     const { pembayaran_id, action, admin_id, admin_catatan } = await request.json()
 
     if (!pembayaran_id || !action || !admin_id) {
@@ -49,8 +57,6 @@ export async function PATCH(request: NextRequest) {
     if (!['terverifikasi', 'ditolak'].includes(action)) {
       return NextResponse.json({ error: 'action harus "terverifikasi" atau "ditolak"' }, { status: 400 })
     }
-
-    const supabase = createServiceClient()
 
     // Get pembayaran
     const { data: pembayaran, error: pError } = await supabase

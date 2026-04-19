@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store'
 import { formatRupiah } from '@/lib/utils/currency'
 import { timeAgo } from '@/lib/utils/date'
+import { toast } from 'sonner'
+import type { Poktan, Transaksi, PreOrder, Notifikasi } from '@/types'
 import {
   Users, ShoppingCart, Wallet, Star, ClipboardCheck,
   Eye, Bell, ChevronRight, Headphones,
@@ -19,12 +21,12 @@ import { KYCStatusBanner } from '@/components/kyc/KYCStatusBanner'
 export default function PoktanDashboard() {
   const user = useAuthStore((s) => s.user)
 
-  const [poktan, setPoktan] = useState<any>(null)
-  const [transaksiAktif, setTransaksiAktif] = useState<any[]>([])
-  const [preOrderTersedia, setPreOrderTersedia] = useState<any[]>([])
-  const [notifikasi, setNotifikasi] = useState<any[]>([])
+  const [poktan, setPoktan] = useState<Poktan | null>(null)
+  const [transaksiAktif, setTransaksiAktif] = useState<Transaksi[]>([])
+  const [preOrderTersedia, setPreOrderTersedia] = useState<PreOrder[]>([])
+  const [notifikasi, setNotifikasi] = useState<Notifikasi[]>([])
   const [totalFeeQA, setTotalFeeQA] = useState(0)
-  const [stats, setStats] = useState<any>({})
+  const [stats, setStats] = useState<{ jumlah_anggota?: number; transaksi_aktif?: number; skor_qa?: number }>({})
   const [kycStatus, setKycStatus] = useState<string>('pending')
   const [loading, setLoading] = useState(true)
 
@@ -43,7 +45,7 @@ export default function PoktanDashboard() {
           setStats(data.stats || {})
         }
       })
-      .catch(() => {})
+      .catch(() => toast.error('Gagal memuat data dashboard'))
       .finally(() => setLoading(false))
 
     // Fetch KYC status separately
@@ -52,7 +54,7 @@ export default function PoktanDashboard() {
       .then(data => {
         if (data?.kyc_status) setKycStatus(data.kyc_status)
       })
-      .catch(() => {})
+      .catch(() => toast.error('Gagal memuat status KYC'))
   }, [user])
 
   return (

@@ -78,25 +78,20 @@ export async function POST(request: NextRequest) {
 
     const { session_id, status, vendor_data, webhook_type } = body
 
-    console.log(`[Didit Webhook] type=${webhook_type} session=${session_id} status=${status} user=${vendor_data}`)
-
-    // In production: update user KYC status in database based on status
+    // TODO: Implement Didit KYC status updates when re-enabled
     // status values: 'Approved', 'Declined', 'In Review', 'In Progress', 'Not Started', 'Abandoned'
     switch (status) {
       case 'Approved':
         // Update user's KYC to approved, upgrade trust level
-        console.log(`[KYC] User ${vendor_data} verification APPROVED`)
         break
       case 'Declined':
         // Update user's KYC to rejected
-        console.log(`[KYC] User ${vendor_data} verification DECLINED`)
         break
       case 'In Review':
         // Mark as pending manual review
-        console.log(`[KYC] User ${vendor_data} verification IN REVIEW`)
         break
       default:
-        console.log(`[KYC] User ${vendor_data} status: ${status}`)
+        break
     }
 
     return NextResponse.json({ success: true })

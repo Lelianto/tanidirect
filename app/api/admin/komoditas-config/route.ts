@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { requireRole } from '@/lib/auth'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = createServiceClient()
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
 
     const { data, error } = await supabase
       .from('komoditas_config')
@@ -23,14 +25,16 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
+
     const body = await request.json()
     const { nama, kategori, zona, daya_tahan_hari, susut_persen, perlu_cold_chain, layak_antar_pulau, harga_petani_ref, harga_jakarta_ref, biaya_kapal_ref, catatan } = body
 
     if (!nama) {
       return NextResponse.json({ error: 'Nama komoditas wajib diisi' }, { status: 400 })
     }
-
-    const supabase = createServiceClient()
 
     const { data, error } = await supabase
       .from('komoditas_config')
@@ -66,14 +70,16 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
+
     const body = await request.json()
     const { id, ...fields } = body
 
     if (!id) {
       return NextResponse.json({ error: 'id wajib diisi' }, { status: 400 })
     }
-
-    const supabase = createServiceClient()
 
     const allowedFields = ['nama', 'kategori', 'zona', 'daya_tahan_hari', 'susut_persen', 'perlu_cold_chain', 'layak_antar_pulau', 'harga_petani_ref', 'harga_jakarta_ref', 'biaya_kapal_ref', 'catatan']
     const updateData: Record<string, unknown> = {}
@@ -110,13 +116,15 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
+
     const { id } = await request.json()
 
     if (!id) {
       return NextResponse.json({ error: 'id wajib diisi' }, { status: 400 })
     }
-
-    const supabase = createServiceClient()
 
     const { error } = await supabase
       .from('komoditas_config')

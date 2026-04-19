@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { requireRole } from '@/lib/auth'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = createServiceClient()
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
 
     const { data: anomali, error } = await supabase
       .from('anomali_log')
@@ -24,7 +26,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServiceClient()
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
+
     const body = await request.json()
     const { anomali_id, keputusan, catatan, admin_id } = body
 

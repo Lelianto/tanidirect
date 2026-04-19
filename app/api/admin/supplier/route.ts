@@ -1,14 +1,17 @@
-import { NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireRole } from '@/lib/auth'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = createServiceClient()
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
 
     const { data, error } = await supabase
       .from('supplier')
       .select('*, user:user_id(id, nama_lengkap, no_hp, is_verified, kyc_status)')
       .order('created_at', { ascending: false })
+      .limit(100)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })

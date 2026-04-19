@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { requireRole } from '@/lib/auth'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = createServiceClient()
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
 
     const { data, error } = await supabase
       .from('disputes')
       .select('*, transaksi:transaksi_id(id, komoditas, grade, status)')
       .order('created_at', { ascending: false })
+      .limit(100)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
@@ -23,7 +26,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServiceClient()
+    const auth = await requireRole(request, 'admin')
+    if (auth instanceof NextResponse) return auth
+    const { supabase } = auth
+
     const body = await request.json()
     const { dispute_id, keputusan, resolusi, kompensasi } = body
 
